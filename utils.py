@@ -88,10 +88,7 @@ class ManageProduct:
             """, (name, quantity, price, description))
             con.commit()
 
-            # Ajouter au tableau de l'application principale
-            if hasattr(self.app.stocks, "table"):
-                self.app.stocks.table.insert("", "end", values=(name, quantity, price, description))
-
+            self.app.stocks.populate_stock_table()
             # Message de succès et fermeture de la fenêtre
             messagebox.showinfo("Succès", "Produit ajouté avec succès.")
             addWindow.destroy()
