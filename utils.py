@@ -99,8 +99,8 @@ class ManageProduct:
             if 'con' in locals():
                 con.close()
                 
-    def updateProduct(self):
-        
+    def UpdateProduct(self):
+    
       # Vérifier si un produit est sélectionné dans le Treeview
       selected_item = self.app.stocks.table.selection()
       
@@ -202,9 +202,60 @@ class ManageProduct:
         finally:
             if 'conn' in locals():
                 conn.close()
-
-
-
-
+                
+    def DeleteProduct(self):
+        
+       # Vérifier si un produit est sélectionné
+       selected_item = self.app.stocks.table.selection()
+       if not selected_item:
+          messagebox.showwarning("Aucun produit sélectionné", "Veuillez sélectionner un produit à supprimer.")
+          return
       
-      
+       # Récupérer l'ID du produit sélectionné
+       item = self.app.stocks.table.item(selected_item[0])
+       product_data = item['values']  # [id, name, quantity, price, description]
+       product_id = product_data[0]  # ID du produit dans la base de données
+       
+       # Demande de confirmation
+       confirm = messagebox.askyesno(
+          "Confirmation de suppression",
+          f"Êtes-vous sûr de vouloir supprimer le produit '{product_data[1]}' ?"
+        )
+       if not confirm:
+        return
+    
+       try:
+          # Connexion à la base de données
+          dbPath = os.path.join(os.path.dirname(__file__), 'database', 'GESTOCK.db')
+          conn = sqlite3.connect(dbPath)
+          cursor = conn.cursor()
+
+          # Suppression dans la base de données
+          cursor.execute("DELETE FROM Stocks WHERE id = ?", (product_id,))
+          conn.commit()
+          
+          if cursor.rowcount == 0:
+             messagebox.showerror("Erreur", "Le produit n'a pas été trouvé dans la base de données.")
+             return
+         
+          # Suppression dans le Treeview
+          self.app.stocks.table.delete(selected_item[0])
+
+          # Message de succès
+          messagebox.showinfo("Succès", f"Le produit '{product_data[1]}' a été supprimé avec succès.")
+
+       except Exception as e:
+        messagebox.showerror("Erreur", f"Une erreur est survenue : {e}")
+
+       finally:
+         if 'conn' in locals():
+            conn.close()
+    
+        
+        
+        
+        
+
+        
+
+    

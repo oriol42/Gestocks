@@ -50,7 +50,10 @@ class Stocks:
 
         # Ajouter les boutons
         action_frame = tk.Frame(self.app.main_frame)
+        
+        #creation d'un objet manage de la classe ManageProduct
         self.manage = ManageProduct(self.app)
+        
         self.add_button = tk.Button(
             action_frame,
             text="Ajouter Produit",
@@ -64,7 +67,7 @@ class Stocks:
         self.edit_button = tk.Button(
             action_frame,
             text="Modifier Produit",
-            command = self.manage.updateProduct,
+            command = self.manage.UpdateProduct,
             font=("Arial", 12),
             bg="#f39c12",
             fg="white"
@@ -73,6 +76,7 @@ class Stocks:
         self.delete_button = tk.Button(
             action_frame,
             text="Supprimer Produit",
+            command=self.manage.DeleteProduct,
             font=("Arial", 12),
             bg="#e74c3c",
             fg="white"
