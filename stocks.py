@@ -35,32 +35,36 @@ class Stocks:
         table_frame = tk.Frame(self.app.main_frame)
         self.table = ttk.Treeview(
             table_frame,
-            columns=("name", "quantity", "Price", "description"),
+            columns=("id","name", "quantity", "Price", "description"),
             show="headings"
         )
+        self.table.heading("id",text="ID")
         self.table.heading("name", text="Nom")
         self.table.heading("quantity", text="Quantité")
-        self.table.heading("Price", text="Prix")
+        self.table.heading("Price", text="Prix(FCFA)")
         self.table.heading("description", text="Description")
+        self.table.column("id",width=0,stretch=tk.NO)
 
         self.table.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
         table_frame.pack(fill=tk.BOTH, expand=True)
 
         # Ajouter les boutons
         action_frame = tk.Frame(self.app.main_frame)
-        self.add = ManageProduct(self.app)
+        self.manage = ManageProduct(self.app)
         self.add_button = tk.Button(
             action_frame,
             text="Ajouter Produit",
-            command=self.add.AddProduct,
+            command=self.manage.AddProduct,
             font=("Arial", 12),
             bg="#2ecc71",
             fg="white"
         )
+        
         self.add_button.grid(row=0, column=0, padx=10, pady=10)
         self.edit_button = tk.Button(
             action_frame,
             text="Modifier Produit",
+            command = self.manage.updateProduct,
             font=("Arial", 12),
             bg="#f39c12",
             fg="white"
@@ -90,7 +94,7 @@ class Stocks:
             conn = sqlite3.connect(dbPath)
             cursor = conn.cursor()
 
-            cursor.execute("SELECT name, quantity, Price, description FROM Stocks")
+            cursor.execute("SELECT id, name, quantity, Price, description FROM Stocks")
             rows = cursor.fetchall()
 
             for row in rows:
