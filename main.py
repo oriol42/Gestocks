@@ -8,16 +8,24 @@ from suppliers import create_suppliers_frame
 from clients import create_clients_frame
 from reports import create_reports_frame
 from settings import create_settings_frame
-from utils import show_frame
+from utils import connect_database, update_table_structure, show_frame
 
 # Création de la fenêtre principale
 root = tk.Tk()
 root.title("Gestion de l'Application")
 root.geometry("1000x600")
 
+# Initialiser la connexion à la base de données
+conn = connect_database()
+update_table_structure(conn)
+
 # Dictionnaire pour gérer les différentes frames
 frames = {}
 
+# Création de la frame des ventes pour récupérer le sales_treeview
+sales_history_frame,sale_history_treeview,totals_frame,totals_treeview =create_sales_history_frame(root)
+sales_frame, sales_treeview = create_sales_frame(root, conn,sale_history_treeview,totals_treeview)
+products_treeview=sales_treeview
 # Menu principal
 menubar = tk.Menu(root)
 
@@ -64,11 +72,11 @@ menubar.add_cascade(label="Paramètres", menu=menu_settings)
 # Configurer la barre de menu
 root.config(menu=menubar)
 
-# Création des frames
+# Création des frames, y compris celle des stocks avec sales_treeview
 frames["dashboard"] = create_dashboard_frame(root)
-frames["sales"] = create_sales_frame(root)
-frames["sales_history"] = create_sales_history_frame(root)
-frames["stocks"] = create_stocks_frame(root)
+frames["sales"] = sales_frame
+frames["sales_history"] = sales_history_frame
+frames["stocks"] = create_stocks_frame(root, conn, sales_treeview,products_treeview)  # Passer directement sales_treeview
 frames["suppliers"] = create_suppliers_frame(root)
 frames["clients"] = create_clients_frame(root)
 frames["reports"] = create_reports_frame(root)

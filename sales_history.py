@@ -1,7 +1,9 @@
 import tkinter as tk
 from tkinter import ttk
+import sqlite3
+from datetime import datetime
+import os
 
-# Fonction d'affichage de la section Historique des Ventes
 def create_sales_history_frame(main_frame):
     # Créer un cadre pour l'historique des ventes dans le frame principal
     sales_history_frame = tk.Frame(main_frame, bg="#f0f0f0", padx=20, pady=20)
@@ -15,7 +17,7 @@ def create_sales_history_frame(main_frame):
     treeview_frame.pack(fill=tk.BOTH, expand=True)
 
     # Créer un Treeview pour afficher l'historique des ventes
-    columns = ("Date", "Client", "Produit", "Quantité", "Prix (FCFA)", "Total (FCFA)")
+    columns = ("Date", "Produit", "Quantité vendue", "Prix (FCFA)", "Total (FCFA)")
     sales_history_treeview = ttk.Treeview(treeview_frame, columns=columns, show="headings")
     
     # Définir les en-têtes des colonnes
@@ -36,21 +38,53 @@ def create_sales_history_frame(main_frame):
     # Placer le Treeview avec un espacement
     sales_history_treeview.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-    # Ajouter quelques lignes simulées pour l'exemple
-    sales_history_treeview.insert("", "end", values=("01/12/2024", "Jean Dupont", "Produit A", 3, "20", "60"))
-    sales_history_treeview.insert("", "end", values=("02/12/2024", "Marie Dubois", "Produit B", 2, "15", "30"))
-    sales_history_treeview.insert("", "end", values=("03/12/2024", "Paul Martin", "Produit A", 1, "20", "20"))
+    # Connexion à la base de données et récupération des données de l'historique des ventes
+    db_path = os.path.join(os.path.dirname(__file__),'DataBase','GESTOCK.db')
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("SELECT date, product_name, quantity, unit_price, total_price FROM sales_history")
+    sales_data = cursor.fetchall()
 
-    # Calcul du total des ventes
-    total_sales = 0
-    for child in sales_history_treeview.get_children():
-        total_sales += int(sales_history_treeview.item(child, 'values')[5])  # Récupérer la colonne "Total (FCFA)"
+    # Récupérer la date actuelle
+    today = datetime.today()
+    current_day = today.day
+    current_month = today.month
+    current_year = today.year
 
-    # Affichage du total des ventes
-    total_sales_label = tk.Label(sales_history_frame, text=f"Total des ventes de la journée : {total_sales} FCFA", font=("Helvetica", 14, "bold"), bg="#f0f0f0", fg="#333")
-    total_sales_label.pack(pady=(10, 0))
+    # Variables pour les totaux
+    total_sales_day = 0
+    total_sales_month = 0
 
-    # Alternance de couleurs de lignes (optionnel pour lisibilité)
+    # Ajouter les données dans le Treeview et calculer les totaux
+    for sale in sales_data:
+        sale_date = sale[0]  # Date de la vente
+        sale_day = int(sale_date.split('-')[2])  # Récupérer le jour de la vente
+        sale_month = int(sale_date.split('-')[1])  # Récupérer le mois de la vente
+        sale_year = int(sale_date.split('-')[0])  # Récupérer l'année de la vente
+
+        # Ajouter la vente au Treeview et calculer les totaux
+        sales_history_treeview.insert("", "end", values=sale)
+        if sale_day == current_day and sale_month == current_month and sale_year == current_year:
+            total_sales_day += float(sale[4])
+        if sale_month == current_month and sale_year == current_year:
+            total_sales_month += float(sale[4])
+
+    # Ajouter un nouveau Treeview pour afficher les totaux
+    totals_frame = tk.Frame(sales_history_frame, bg="#f0f0f0")
+    totals_frame.pack(fill=tk.X, pady=10)
+
+    totals_columns = ("Total des ventes de la journée", "Total des ventes du mois")
+    totals_treeview = ttk.Treeview(totals_frame, columns=totals_columns, show="headings", height=1)
+
+    for col in totals_columns:
+        totals_treeview.heading(col, text=col)
+        totals_treeview.column(col, anchor="center", width=200)
+
+    # Ajouter les totaux calculés dans le Treeview
+    totals_treeview.insert("", "end", values=(f"{total_sales_day} FCFA", f"{total_sales_month} FCFA"))
+    totals_treeview.pack(fill=tk.X, padx=10)
+
+    # Alternance de couleurs de lignes pour le Treeview des ventes
     for idx in range(len(sales_history_treeview.get_children())):
         if idx % 2 == 0:
             sales_history_treeview.item(sales_history_treeview.get_children()[idx], tags=('even',))
@@ -60,4 +94,4 @@ def create_sales_history_frame(main_frame):
     sales_history_treeview.tag_configure('even', background="#f9f9f9")  # Couleur de ligne paire
     sales_history_treeview.tag_configure('odd', background="#ffffff")   # Couleur de ligne impaire
 
-    return sales_history_frame
+    return sales_history_frame, sales_history_treeview,totals_frame,totals_treeview
