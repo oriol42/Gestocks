@@ -132,9 +132,8 @@ def add_product(stock_treeview, conn,products_treeview):
     entry_fournisseur.grid(row=3, column=1, padx=12, pady=12)
 
     tk.Label(add_window, text="Catégorie :", font=("arial", 9)).grid(row=4, column=0, sticky="w", padx=12, pady=12)
-    categories = ["Électronique", "Vêtements", "Meubles", "Accessoires", "Autre"]
+    categories = [] #vide pour l'instant
     category_combobox = ttk.Combobox(add_window, values=categories, font=("arial", 9))
-    category_combobox.set("Électronique")
     category_combobox.grid(row=4, column=1, padx=12, pady=12)
     
     tk.Label(add_window, text="Prix d'achat de l'unité :", font=("arial", 9)).grid(row=5, column=0, sticky="w", padx=12, pady=12)
