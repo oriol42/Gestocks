@@ -1,7 +1,12 @@
 import tkinter as tk
 from tkinter import messagebox
+import sqlite3
+import os
+import utils
+import reports
 
-def show_stock_settings(content_frame):
+
+def show_stock_settings(content_frame,stock_alert_frame,stock_report_frame):
     # Effacer les widgets existants dans le content_frame
     for widget in content_frame.winfo_children():
         widget.destroy()
@@ -12,20 +17,33 @@ def show_stock_settings(content_frame):
     stock_threshold_entry = tk.Entry(content_frame, font=("Helvetica", 12), width=30)
     stock_threshold_entry.pack(pady=5)
     
-    # Unité de mesure
-    tk.Label(content_frame, text="Unité de mesure", font=("Helvetica", 12), bg="#f7f7f7", fg="#444").pack(pady=5)
-    unit_var = tk.StringVar(value="Kg")
-    tk.OptionMenu(content_frame, unit_var, "Kg", "Litre", "Unité").pack(pady=5)
-    
-    # Bouton Enregistrer
+    # Fonction pour enregistrer le seuil dans la table reorder_threshold
     def save_stock_settings():
         threshold = stock_threshold_entry.get()
-        unit = unit_var.get()
         if not threshold.isdigit():
             messagebox.showwarning("Entrée invalide", "Veuillez entrer un seuil de réapprovisionnement valide.")
         else:
-            messagebox.showinfo("Paramètres enregistrés", f"Seuil: {threshold} | Unité: {unit}")
+            # Connexion à la base de données
+            db_path = os.path.join(os.path.dirname(__file__),'DataBase','GESTOCK.db')  # Modifie le chemin selon ton environnement
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+
+            # Supprimer l'ancien seuil
+            cursor.execute("DELETE FROM reorder_threshold")
+            
+            # Insertion du nouveau seuil dans la table reorder_threshold
+            cursor.execute("INSERT INTO reorder_threshold (reorder_point) VALUES (?)", (threshold,))
+            conn.commit()
+            
+            # Fermer la connexion
+            conn.close()
+            
+            # Message de confirmation
+            messagebox.showinfo("Paramètres enregistrés", f"Seuil enregistré : {threshold}")
+            utils.load_low_stock_alerts(stock_alert_frame)
+            utils.update_stocks_report_frame(stock_report_frame)
     
+    # Bouton Enregistrer
     tk.Button(content_frame, text="Enregistrer", font=("Helvetica", 12), bg="#4CAF50", fg="white", command=save_stock_settings).pack(pady=10)
 
 def show_sales_settings(content_frame):
@@ -122,7 +140,7 @@ def show_update_settings(content_frame):
     tk.Button(content_frame, text="Vérifier maintenant", font=("Helvetica", 12), bg="#FF5722", fg="white", command=check_updates).pack(pady=10)
 
 # Créer la fonction de la section des paramètres
-def create_settings_frame(main_frame):
+def create_settings_frame(main_frame,stock_alert_frame,stock_report_frame):
     settings_frame = tk.Frame(main_frame, bg="#f7f7f7", padx=20, pady=20)
     settings_frame.pack(expand=True, fill="both", padx=30, pady=30)  # Centrage de la frame principale
 
@@ -134,7 +152,7 @@ def create_settings_frame(main_frame):
     left_frame.pack(side="left", padx=20, pady=20)
 
     # **Boutons pour naviguer entre les sections**
-    stock_management_button = tk.Button(left_frame, text="Gestion des Stocks", font=("Helvetica", 12), bg="#FF5722", fg="white", relief="raised", bd=3, padx=10, pady=5, command=lambda: show_stock_settings(content_frame))
+    stock_management_button = tk.Button(left_frame, text="Gestion des Stocks", font=("Helvetica", 12), bg="#FF5722", fg="white", relief="raised", bd=3, padx=10, pady=5, command=lambda: show_stock_settings(content_frame,stock_alert_frame,stock_report_frame))
     stock_management_button.pack(pady=5, fill="x")
 
     sales_management_button = tk.Button(left_frame, text="Gestion des Ventes", font=("Helvetica", 12), bg="#FF5722", fg="white", relief="raised", bd=3, padx=10, pady=5, command=lambda: show_sales_settings(content_frame))

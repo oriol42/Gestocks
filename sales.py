@@ -3,7 +3,7 @@ from tkinter import ttk
 from tkinter import messagebox
 import utils
 
-def create_sales_frame(main_frame, conn, sales_history_treeview, totals_treeview):
+def create_sales_frame(main_frame, conn, sales_history_treeview, totals_treeview,dashboard_treeview,stock_alert_frame,sales_report_frame,stock_report_frame):
     # Créer le cadre principal pour les ventes
     sales_frame = tk.Frame(main_frame, bg="#f0f0f0")
     tk.Label(sales_frame, text="GESTION DES VENTES", font=("Helvetica", 16, "bold"), bg="#f0f0f0", fg="#333").pack(pady=10)
@@ -40,16 +40,18 @@ def create_sales_frame(main_frame, conn, sales_history_treeview, totals_treeview
     products_frame = tk.Frame(sales_frame, bg="#f0f0f0")
     products_frame.pack(pady=10)
 
-    columns = ("Nom", "Quantité en stock", "Prix")
+    columns = ("Nom", "Quantité en stock", "Prix de vente","Prix d'achat")
     products_treeview = ttk.Treeview(products_frame, columns=columns, show="headings", height=6)
 
     products_treeview.heading("Nom", text="Nom")
     products_treeview.heading("Quantité en stock", text="Quantité en stock")
-    products_treeview.heading("Prix", text="Prix")
+    products_treeview.heading("Prix de vente", text="Prix de vente")
+    products_treeview.heading("Prix d'achat", text="Prix d'achat")
 
     products_treeview.column("Nom", width=200, anchor="center")
     products_treeview.column("Quantité en stock", width=200, anchor="center")
-    products_treeview.column("Prix", width=100, anchor="center")
+    products_treeview.column("Prix de vente", width=200, anchor="center")
+    products_treeview.column("Prix d'achat", width=200, anchor="center")
 
     products_treeview.pack(fill=tk.BOTH, expand=True)
     utils.load_products_sales(products_treeview, conn)
@@ -97,7 +99,7 @@ def create_sales_frame(main_frame, conn, sales_history_treeview, totals_treeview
     cart_actions_frame = tk.Frame(sales_frame, bg="#f0f0f0")
     cart_actions_frame.pack(pady=10)
 
-    generate_invoice_button = tk.Button(cart_actions_frame, text="GÉNÉRER LA FACTURE", font=("Helvetica", 12), bg="#2196F3", fg="white", command=lambda: [utils.generate_simple_invoice(cart_treeview, conn, sales_history_treeview), utils.update_totals_treeview(totals_treeview)])
+    generate_invoice_button = tk.Button(cart_actions_frame, text="GÉNÉRER LA FACTURE", font=("Helvetica", 12), bg="#2196F3", fg="white", command=lambda: [utils.generate_simple_invoice(cart_treeview, conn, sales_history_treeview,dashboard_treeview,stock_alert_frame,sales_report_frame,stock_report_frame), utils.update_totals_treeview(totals_treeview),utils.update_dashboard_treeview(dashboard_treeview)])
     generate_invoice_button.pack(side=tk.LEFT, padx=10)
 
     empty_button = tk.Button(cart_actions_frame, text="VIDER LE PANIER", font=("Helvetica", 12), bg="#FF5722", fg="white", command=lambda: utils.cancel_the_cart(cart_treeview, products_treeview, conn, total_label))

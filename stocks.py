@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import utils  #Importer les fonctions nécessaires
 
-def create_stocks_frame(main_frame, conn, sales_frame, products_treeview):
+def create_stocks_frame(main_frame, conn, sales_frame, products_treeview,dashboard_treeview,stock_alert_frame,stock_report_frame):
     stocks_frame = tk.Frame(main_frame, bg="#f8f9fa")  # Fond de l'interface
     tk.Label(stocks_frame, text="Gestion des Stocks", font=("Helvetica", 16, "bold"), bg="#f8f9fa", fg="#333").pack(pady=20)
 
@@ -19,7 +19,7 @@ def create_stocks_frame(main_frame, conn, sales_frame, products_treeview):
     search_button.pack(side=tk.LEFT, padx=5)
     
     # Ajouter un bouton pour réinitialiser le tableau
-    reset_button = tk.Button(search_frame, text="Réinitialiser", font=("Helvetica", 12), bg="#FF9800", fg="white", 
+    reset_button = tk.Button(search_frame, text="Rafraichir", font=("Helvetica", 12), bg="#FF9800", fg="white", 
                               command=lambda: utils.reset_table(stock_treeview, conn))
     reset_button.pack(side=tk.LEFT, padx=10)
 
@@ -57,7 +57,7 @@ def create_stocks_frame(main_frame, conn, sales_frame, products_treeview):
     # Titre des colonnes
     stock_treeview.heading("#1", text="Nom", anchor="w")
     stock_treeview.heading("#2", text="Quantité", anchor="w")
-    stock_treeview.heading("#3", text="Prix (FCFA)", anchor="w")
+    stock_treeview.heading("#3", text="Prix de vente (FCFA)", anchor="w")
     stock_treeview.heading("#4", text="Fournisseur", anchor="w")
     stock_treeview.heading("#5", text="Date d'ajout", anchor="w")
     stock_treeview.heading("#6", text="Catégorie", anchor="w")
@@ -82,8 +82,8 @@ def create_stocks_frame(main_frame, conn, sales_frame, products_treeview):
     button_frame = tk.Frame(stocks_frame, bg="#f8f9fa")
     button_frame.pack(pady=20)
 
-    tk.Button(button_frame, text="Ajouter un Produit", font=("Helvetica", 12), bg="#4CAF50", fg="white", command=lambda: utils.add_product(stock_treeview, conn, products_treeview)).pack(side=tk.LEFT, padx=10)
-    tk.Button(button_frame, text="Supprimer un Produit", font=("Helvetica", 12), bg="#FF5722", fg="white", command=lambda: utils.delete_product(stock_treeview, conn, products_treeview)).pack(side=tk.LEFT, padx=10)
-    tk.Button(button_frame, text="Modifier un Produit", font=("Helvetica", 12), bg="#FF9800", fg="white", command=lambda: utils.modify_product(stock_treeview, conn, products_treeview)).pack(side=tk.LEFT, padx=10)
+    tk.Button(button_frame, text="Ajouter un Produit", font=("Helvetica", 12), bg="#4CAF50", fg="white", command=lambda: utils.add_product(stock_treeview, conn, products_treeview,dashboard_treeview,stock_alert_frame,stock_report_frame)).pack(side=tk.LEFT, padx=10)
+    tk.Button(button_frame, text="Supprimer un Produit", font=("Helvetica", 12), bg="#FF5722", fg="white", command=lambda: utils.delete_product(stock_treeview, conn, products_treeview,dashboard_treeview,stock_alert_frame,stock_report_frame)).pack(side=tk.LEFT, padx=10)
+    tk.Button(button_frame, text="Modifier un Produit", font=("Helvetica", 12), bg="#FF9800", fg="white", command=lambda: utils.modify_product(stock_treeview, conn, products_treeview,dashboard_treeview,stock_alert_frame,stock_report_frame)).pack(side=tk.LEFT, padx=10)
     
     return stocks_frame
