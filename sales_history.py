@@ -42,7 +42,7 @@ def create_sales_history_frame(main_frame):
     db_path = os.path.join(os.path.dirname(__file__),'DataBase','GESTOCK.db')
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute("SELECT date, product_name, quantity, unit_price, total_price FROM sales_history")
+    cursor.execute("SELECT date, product_name, quantity, unit_price, total_price, id FROM sales_history")  # Ajout de l'ID pour la suppression
     sales_data = cursor.fetchall()
 
     # Récupérer la date actuelle
@@ -63,11 +63,17 @@ def create_sales_history_frame(main_frame):
         sale_year = int(sale_date.split('-')[0])  # Récupérer l'année de la vente
 
         # Ajouter la vente au Treeview et calculer les totaux
-        sales_history_treeview.insert("", "end", values=sale)
+        sales_history_treeview.insert("", "end", values=sale[:-1])  # Ne pas insérer l'ID
         if sale_day == current_day and sale_month == current_month and sale_year == current_year:
             total_sales_day += float(sale[4])
         if sale_month == current_month and sale_year == current_year:
             total_sales_month += float(sale[4])
+
+    # Ajouter un bouton pour supprimer une vente sélectionnée sans aucune action
+    delete_button = tk.Button(sales_history_frame, text="Supprimer la vente", command=lambda: None,
+                              font=("Helvetica", 12, "bold"), bg="#ff4d4d", fg="white", relief="flat",
+                              padx=20, pady=10, bd=0, activebackground="#ff3333", activeforeground="white")
+    delete_button.pack(pady=10)
 
     # Ajouter un nouveau Treeview pour afficher les totaux
     totals_frame = tk.Frame(sales_history_frame, bg="#f0f0f0")
@@ -94,4 +100,4 @@ def create_sales_history_frame(main_frame):
     sales_history_treeview.tag_configure('even', background="#f9f9f9")  # Couleur de ligne paire
     sales_history_treeview.tag_configure('odd', background="#ffffff")   # Couleur de ligne impaire
 
-    return sales_history_frame, sales_history_treeview,totals_frame,totals_treeview
+    return sales_history_frame, sales_history_treeview, totals_frame, totals_treeview

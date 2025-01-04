@@ -8,21 +8,6 @@ def create_sales_frame(main_frame, conn, sales_history_treeview, totals_treeview
     sales_frame = tk.Frame(main_frame, bg="#f0f0f0")
     tk.Label(sales_frame, text="GESTION DES VENTES", font=("Helvetica", 16, "bold"), bg="#f0f0f0", fg="#333").pack(pady=10)
 
-    # **Sélection du client** : Ajouter un menu déroulant pour choisir le client
-    client_selection_frame = tk.Frame(sales_frame, bg="#f0f0f0")
-    client_selection_frame.pack(pady=10)
-
-    # Label pour le menu déroulant
-    tk.Label(client_selection_frame, text="Sélectionner le client :", font=("Helvetica", 12), bg="#f0f0f0", fg="#333").pack(side=tk.LEFT, padx=5)
-
-    # **Menu déroulant pour la sélection du client**  
-    # La liste des clients sera récupérée depuis le backend (fonction à coder côté backend)
-    client_combobox = ttk.Combobox(client_selection_frame, font=("Helvetica", 12), width=30)
-    client_combobox.pack(side=tk.LEFT, padx=5)
-
-    # La fonction backend qui récupère les noms de clients de la base de données
-
-
     # **Recherche et réinitialisation**
     search_frame = tk.Frame(sales_frame, bg="#f0f0f0")
     search_frame.pack(pady=10)
