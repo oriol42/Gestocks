@@ -28,6 +28,9 @@ def create_dashboard_frame(main_frame):
     dashboard_treeview.heading("#4", text="Benefice mensuel", anchor="w")
     dashboard_treeview.heading("#5", text="Stock disponible", anchor="w")
     dashboard_treeview.heading("#6", text="Produits en rupture de stocks", anchor="w")
+    
+    #redefinition de la largeur de la derniere colonne
+    dashboard_treeview.column("#6",width=300, anchor= "w")
 
     # Style de police et de couleur pour améliorer la lisibilité
     style = ttk.Style()

@@ -62,6 +62,9 @@ def create_stocks_frame(main_frame, conn, sales_frame, products_treeview,dashboa
     stock_treeview.heading("#5", text="Date d'ajout", anchor="w")
     stock_treeview.heading("#6", text="Catégorie", anchor="w")
     stock_treeview.heading("#7", text="Prix d'achat de l'unité", anchor="w")
+    
+    #redefinition de la largeur de la derniere colonne
+    stock_treeview.column("#7", width=220, anchor="w")
 
     # Style de police et de couleur pour améliorer la lisibilité
     style = ttk.Style()
