@@ -15,7 +15,7 @@ import time
 
 # Créer la fenêtre principale
 root = tk.Tk()
-root.title("Gestion de l'Application")
+root.title("Gestocks")
 icon_path = os.path.join(os.path.dirname(__file__),'assets','icon.ico')
 root.iconbitmap(icon_path)
 
