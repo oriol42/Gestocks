@@ -48,8 +48,7 @@ def create_dashboard_frame(main_frame):
         text="Produits en rupture de stock",
         font=("Helvetica", 12),
         bg="#ffffff",  # Couleur identique à celle du cadre
-        fg="#34495e",
-        relief="flat",
+        fg="red",
         activebackground="#ffffff",  # Arrière-plan au clic
         command=lambda:view_out_of_stock(main_frame) # Fonction pour gérer les produits en rupture
     )

@@ -6,6 +6,8 @@ from datetime import datetime,timedelta
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 import webbrowser
+from dotenv import load_dotenv
+from tkinter.simpledialog import askstring
 
 
 
@@ -68,7 +70,7 @@ def load_products(stock_treeview, conn):
 
 
 # Fonction pour ajouter un produit
-def add_product(stock_treeview, conn,products_treeview,dashboard_treeview,stock_alert_frame,stock_report_frame):
+def add_product(stock_treeview, conn,products_treeview,dashboard_treeview,stock_alert_frame,stock_report_frame,category_filter):
     def submit_product():
         nom = entry_nom.get()
         quantite = entry_quantite.get()
@@ -111,6 +113,7 @@ def add_product(stock_treeview, conn,products_treeview,dashboard_treeview,stock_
         load_low_stock_alerts(stock_alert_frame)
         update_dashboard_treeview(dashboard_treeview)
         update_stocks_report_frame(stock_report_frame)
+        update_categories(conn,category_filter)
         add_window.destroy()
 
     # Fenêtre pour ajouter un produit
@@ -145,7 +148,7 @@ def add_product(stock_treeview, conn,products_treeview,dashboard_treeview,stock_
 
     tk.Button(add_window, text="Ajouter", font=("arial", 9), bg="#4CAF50", fg="white", command=submit_product).grid(row=6, column=1, sticky="w", padx=12, pady=12)
     
-def delete_product(stock_treeview, conn,products_treeview,dashboard_treeview,stock_alert_frame,stock_report_frame):
+def delete_product(stock_treeview, conn,products_treeview,dashboard_treeview,stock_alert_frame,stock_report_frame,category_filter):
     # Récupérer l'élément sélectionné dans le Treeview
     selected_item = stock_treeview.selection()
     if not selected_item:
@@ -173,13 +176,13 @@ def delete_product(stock_treeview, conn,products_treeview,dashboard_treeview,sto
         load_low_stock_alerts(stock_alert_frame)
         update_dashboard_treeview(dashboard_treeview)
         update_stocks_report_frame(stock_report_frame)
+        update_categories(conn,category_filter)
     else:
         messagebox.showinfo("Annulé", "Suppression annulée.")
       
-        
-    
+           
 # Fonction pour modifier un produit
-def modify_product(stock_treeview, conn,products_treeview,dashboard_treeview,stock_alert_frame,stock_report_frame):
+def modify_product(stock_treeview, conn,products_treeview,dashboard_treeview,stock_alert_frame,stock_report_frame,category_filter):
     selected_item = stock_treeview.selection()
     if not selected_item:
         messagebox.showwarning("Sélection requise", "Veuillez sélectionner un produit à modifier.")
@@ -217,7 +220,7 @@ def modify_product(stock_treeview, conn,products_treeview,dashboard_treeview,sto
     entry_fournisseur.grid(row=3, column=1, padx=12, pady=12)
 
     tk.Label(modify_window, text="Catégorie :", font=("arial", 9)).grid(row=4, column=0, sticky="w", padx=12, pady=12)
-    categories = ["Électronique", "Vêtements", "Meubles", "Accessoires", "Autre"]
+    categories = []
     category_combobox = ttk.Combobox(modify_window, values=categories, font=("arial", 9))
     category_combobox.set(categorie)
     category_combobox.grid(row=4, column=1, padx=12, pady=12)
@@ -268,6 +271,7 @@ def modify_product(stock_treeview, conn,products_treeview,dashboard_treeview,sto
         update_dashboard_treeview(dashboard_treeview)
         load_low_stock_alerts(stock_alert_frame)
         update_stocks_report_frame(stock_report_frame)
+        update_categories(conn,category_filter)
         
         modify_window.destroy()
 
@@ -521,25 +525,56 @@ def generate_simple_invoice(cart_treeview, conn, sales_history_treeview, dashboa
     invoice_name = f"Facture_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
     invoice_path = os.path.join(facture_folder, invoice_name)  # Enregistrer dans le dossier 'factures'
 
+    # Récupérer les informations de l'entreprise depuis la table account
+    cursor = conn.cursor()
+    cursor.execute("SELECT company_name, company_address, company_phone_numbers FROM account")
+    company_info = cursor.fetchone()
+    if company_info:
+        company_name, company_address, company_phone_numbers = company_info
+    else:
+        messagebox.showerror("Erreur", "Les informations de l'entreprise ne sont pas disponibles.")
+        return
+
     # Créer un canevas pour la facture
     c = canvas.Canvas(invoice_path, pagesize=letter)
     c.setFont("Helvetica-Bold", 16)
     c.drawString(200, 750, "FACTURE")
 
+    # Informations de l'entreprise
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(50, 720, f"Nom de l'entreprise :")
     c.setFont("Helvetica", 12)
-    c.drawString(50, 720, f"Date : {datetime.now().strftime('%d/%m/%Y')}")
-    c.drawString(50, 700, f"Heure : {datetime.now().strftime('%H:%M:%S')}")
+    c.drawString(200, 720, company_name)
+
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(50, 700, f"Adresse de l'entreprise :")
+    c.setFont("Helvetica", 12)
+    c.drawString(200, 700, company_address)
+
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(50, 680, f"Numéro de téléphone :")
+    c.setFont("Helvetica", 12)
+    c.drawString(200, 680, str(company_phone_numbers))
+
+    # Ajouter un espacement avant la section des produits
+    y_position = 640
+    c.drawString(50, y_position, "-------------------------------------------")
+    y_position -= 20
+
+    c.setFont("Helvetica", 12)
+    c.drawString(50, y_position, f"Date : {datetime.now().strftime('%d/%m/%Y')}")
+    c.drawString(50, y_position - 20, f"Heure : {datetime.now().strftime('%H:%M:%S')}")
 
     # Entêtes des colonnes
-    c.drawString(50, 650, "Nom du produit")
-    c.drawString(200, 650, "Quantité")
-    c.drawString(300, 650, "Prix unitaire")
-    c.drawString(400, 650, "Prix total")
-    c.line(50, 645, 500, 645)
+    c.drawString(50, y_position - 60, "Nom du produit")
+    c.drawString(200, y_position - 60, "Quantité")
+    c.drawString(300, y_position - 60, "Prix unitaire")
+    c.drawString(400, y_position - 60, "Prix total")
+    c.line(50, y_position - 65, 500, y_position - 65)
 
     # Variables pour le total général
     total_general = 0
-    y_position = 620
+    y_position -= 80
 
     # Mettre à jour les stocks et écrire les produits dans la facture
     for item in cart_treeview.get_children():
@@ -1330,29 +1365,304 @@ def update_stocks_report_frame(stock_report_frame):
     tk.Label(stock_report_frame, text=texte_reapprovisionnement, font=("Helvetica", 12), bg="#ffffff", fg="#D32F2F").pack(anchor="w",pady=4)
 
 
-def change_theme(main_window, theme="Clair"):
+def create_account_form(content_frame):
     """
-    Change le thème de l'application entre clair et sombre.
+    Crée un formulaire pour la création d'un compte utilisateur.
+    Vérifie qu'il n'y a pas déjà un compte dans la base de données.
     """
-    if theme == "Sombre":
-        bg_color = "#2E2E2E"  # Couleur de fond sombre
-        fg_color = "#FFFFFF"  # Couleur du texte claire
-        button_bg = "#555555"  # Couleur des boutons sombres
-        button_fg = "#FFFFFF"  # Texte des boutons clairs
+    # Effacer les widgets existants dans le content_frame
+    for widget in content_frame.winfo_children():
+        widget.destroy()
+
+    # Titre du formulaire
+    tk.Label(content_frame, text="Création de compte utilisateur", font=("Helvetica", 18, "bold"), bg="#f7f7f7", fg="#333").pack(pady=20)
+
+    # Cadre pour les labels et les champs
+    form_frame = tk.Frame(content_frame, bg="#f7f7f7")
+    form_frame.pack(pady=10)
+
+    # Champ Nom administrateur
+    tk.Label(form_frame, text="Nom administrateur", font=("Helvetica", 12), bg="#f7f7f7", fg="#444").grid(row=0, column=0, padx=10, pady=5, sticky="e")
+    administrator_name_entry = tk.Entry(form_frame, font=("Helvetica", 12), width=30)
+    administrator_name_entry.grid(row=0, column=1, pady=5)
+
+    # Champ Mot de passe
+    tk.Label(form_frame, text="Mot de passe", font=("Helvetica", 12), bg="#f7f7f7", fg="#444").grid(row=1, column=0, padx=10, pady=5, sticky="e")
+    password_entry = tk.Entry(form_frame, font=("Helvetica", 12), show="*", width=30)
+    password_entry.grid(row=1, column=1, pady=5)
+
+    # Champ Nom de l'entreprise
+    tk.Label(form_frame, text="Nom de l'entreprise", font=("Helvetica", 12), bg="#f7f7f7", fg="#444").grid(row=2, column=0, padx=10, pady=5, sticky="e")
+    company_name_entry = tk.Entry(form_frame, font=("Helvetica", 12), width=30)
+    company_name_entry.grid(row=2, column=1, pady=5)
+
+    # Champ Adresse de l'entreprise
+    tk.Label(form_frame, text="Adresse de l'entreprise", font=("Helvetica", 12), bg="#f7f7f7", fg="#444").grid(row=3, column=0, padx=10, pady=5, sticky="e")
+    company_address_entry = tk.Entry(form_frame, font=("Helvetica", 12), width=30)
+    company_address_entry.grid(row=3, column=1, pady=5)
+
+    # Champ Numéro(s) de téléphone
+    tk.Label(form_frame, text="Numéro(s) de téléphone", font=("Helvetica", 12), bg="#f7f7f7", fg="#444").grid(row=4, column=0, padx=10, pady=5, sticky="e")
+    company_phone_numbers_entry = tk.Entry(form_frame, font=("Helvetica", 12), width=30)
+    company_phone_numbers_entry.grid(row=4, column=1, pady=5)
+
+    # Fonction pour vérifier si un compte existe déjà dans la table
+    def account_exists():
+        db_path = os.path.join(os.path.dirname(__file__), 'DataBase', 'GESTOCK.db')
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        # Vérifier s'il y a déjà un enregistrement dans la table account
+        cursor.execute("SELECT COUNT(*) FROM account")
+        count = cursor.fetchone()[0]
+        
+        conn.close()
+
+        return count > 0  # Retourne True si un compte existe, sinon False
+
+    # Fonction pour enregistrer le compte dans la base de données
+    def save_account():
+        administrator_name = administrator_name_entry.get()
+        password = password_entry.get()
+        company_name = company_name_entry.get()
+        company_address = company_address_entry.get()
+        company_phone_numbers = company_phone_numbers_entry.get()
+
+        # Vérification des champs vides
+        if not administrator_name or not password or not company_name or not company_address or not company_phone_numbers:
+            messagebox.showwarning("Entrée invalide", "Tous les champs doivent être remplis.")
+            return
+        
+        # Vérifier si un compte existe déjà dans la base de données
+        if account_exists():
+            messagebox.showerror("Erreur", "Un compte existe déjà. La création d'un nouveau compte est impossible.")
+            return
+        
+        # Connexion à la base de données
+        db_path = os.path.join(os.path.dirname(__file__), 'DataBase', 'GESTOCK.db')
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        try:
+            # Insérer les données dans la table account
+            cursor.execute("""
+                INSERT INTO account (administrator_name, password, company_name, company_address, company_phone_numbers)
+                VALUES (?, ?, ?, ?, ?)
+            """, (administrator_name, password, company_name, company_address, company_phone_numbers))
+            
+            conn.commit()
+            messagebox.showinfo("Succès", "Compte créé avec succès.")
+        except sqlite3.Error as e:
+            messagebox.showerror("Erreur", f"Une erreur est survenue lors de la création du compte : {e}")
+        finally:
+            conn.close()
+
+    # Bouton pour soumettre le formulaire
+    tk.Button(content_frame, text="Créer le compte", font=("Helvetica", 12), bg="#4CAF50", fg="white", command=save_account).pack(pady=10)
+
+# Charger les variables d'environnement depuis le fichier .env
+load_dotenv()
+
+# Récupérer le mot de passe administrateur du fichier .env
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+
+def modify_account_form(content_frame):
+    """
+    Crée un formulaire pour modifier un compte utilisateur.
+    Vérifie que le mot de passe actuel de l'utilisateur ou le mot de passe administrateur est correct
+    avant de permettre la modification.
+    """
+    # Effacer les widgets existants dans le content_frame
+    for widget in content_frame.winfo_children():
+        widget.destroy()
+
+    # Titre du formulaire
+    tk.Label(content_frame, text="Modifier le compte utilisateur", font=("Helvetica", 18, "bold"), bg="#f7f7f7", fg="#333").pack(pady=20)
+
+    # Cadre pour les champs de saisie
+    input_frame = tk.Frame(content_frame, bg="#f7f7f7")
+    input_frame.pack(pady=10)
+
+    # Champ Nom administrateur
+    tk.Label(input_frame, text="Nom administrateur", font=("Helvetica", 12), bg="#f7f7f7", fg="#444").grid(row=0, column=0, padx=10, pady=5, sticky="e")
+    administrator_name_entry = tk.Entry(input_frame, font=("Helvetica", 12), width=30)
+    administrator_name_entry.grid(row=0, column=1, padx=10, pady=5)
+
+    # Champ Nouveau mot de passe
+    tk.Label(input_frame, text="Nouveau Mot de passe", font=("Helvetica", 12), bg="#f7f7f7", fg="#444").grid(row=1, column=0, padx=10, pady=5, sticky="e")
+    new_password_entry = tk.Entry(input_frame, font=("Helvetica", 12), show="*", width=30)
+    new_password_entry.grid(row=1, column=1, padx=10, pady=5)
+
+    # Champ Nom de l'entreprise
+    tk.Label(input_frame, text="Nom de l'entreprise", font=("Helvetica", 12), bg="#f7f7f7", fg="#444").grid(row=2, column=0, padx=10, pady=5, sticky="e")
+    company_name_entry = tk.Entry(input_frame, font=("Helvetica", 12), width=30)
+    company_name_entry.grid(row=2, column=1, padx=10, pady=5)
+
+    # Champ Adresse de l'entreprise
+    tk.Label(input_frame, text="Adresse de l'entreprise", font=("Helvetica", 12), bg="#f7f7f7", fg="#444").grid(row=3, column=0, padx=10, pady=5, sticky="e")
+    company_address_entry = tk.Entry(input_frame, font=("Helvetica", 12), width=30)
+    company_address_entry.grid(row=3, column=1, padx=10, pady=5)
+
+    # Champ Numéro de téléphone de l'entreprise
+    tk.Label(input_frame, text="Numéro de téléphone", font=("Helvetica", 12), bg="#f7f7f7", fg="#444").grid(row=4, column=0, padx=10, pady=5, sticky="e")
+    company_phone_numbers_entry = tk.Entry(input_frame, font=("Helvetica", 12), width=30)
+    company_phone_numbers_entry.grid(row=4, column=1, padx=10, pady=5)
+
+    # Champ Mot de passe actuel
+    tk.Label(input_frame, text="Mot de passe actuel", font=("Helvetica", 12), bg="#f7f7f7", fg="#444").grid(row=5, column=0, padx=10, pady=5, sticky="e")
+    current_password_entry = tk.Entry(input_frame, font=("Helvetica", 12), show="*", width=30)
+    current_password_entry.grid(row=5, column=1, padx=10, pady=5)
+
+    # Fonction pour vérifier les mots de passe et enregistrer les modifications
+    def save_account_changes():
+        # Récupérer les informations des champs
+        entered_current_password = current_password_entry.get()
+        new_administrator_name = administrator_name_entry.get()
+        new_password = new_password_entry.get()
+        new_company_name = company_name_entry.get()
+        new_company_address = company_address_entry.get()
+        new_company_phone_numbers = company_phone_numbers_entry.get()
+
+        # Connexion à la base de données pour récupérer les informations actuelles
+        db_path = os.path.join(os.path.dirname(__file__), 'DataBase', 'GESTOCK.db')
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT * FROM account LIMIT 1")
+        account = cursor.fetchone()
+        conn.close()
+
+        if not account:
+            messagebox.showerror("Erreur", "Aucun compte trouvé dans la base de données.")
+            return
+
+        # Vérification du mot de passe actuel
+        if entered_current_password != account[1] and entered_current_password != ADMIN_PASSWORD:
+            messagebox.showerror("Erreur", "Mot de passe incorrect. La modification a échoué.")
+            return
+
+        # Mise à jour des informations du compte
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            UPDATE account
+            SET administrator_name = ?, password = ?, company_name = ?, company_address = ?, company_phone_numbers = ?
+            WHERE rowid = 1
+        """, (new_administrator_name, new_password, new_company_name, new_company_address, new_company_phone_numbers))
+
+        conn.commit()
+        conn.close()
+
+        # Message de succès
+        messagebox.showinfo("Succès", "Les informations du compte ont été mises à jour avec succès.")
+
+    # Bouton pour enregistrer les modifications
+    tk.Button(content_frame, text="Enregistrer les modifications", font=("Helvetica", 12), bg="#4CAF50", fg="white", command=save_account_changes).pack(pady=10)
+ 
+
+def display_account_info(content_frame):
+    """
+    Affiche les informations du compte dans un formulaire sans afficher le mot de passe.
+    """
+    # Effacer les widgets existants dans le content_frame
+    for widget in content_frame.winfo_children():
+        widget.destroy()
+
+    # Titre du formulaire
+    tk.Label(content_frame, text="Informations du compte utilisateur", font=("Helvetica", 18, "bold"), bg="#f7f7f7", fg="#333").pack(pady=20)
+
+    # Cadre pour les labels et les champs
+    form_frame = tk.Frame(content_frame, bg="#f7f7f7")
+    form_frame.pack(pady=10)
+
+    # Connexion à la base de données pour récupérer les informations du compte
+    db_path = os.path.join(os.path.dirname(__file__), 'DataBase', 'GESTOCK.db')
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT administrator_name, company_name, company_address, company_phone_numbers FROM account")
+    account_info = cursor.fetchone()
+
+    conn.close()
+
+    if not account_info:
+        messagebox.showerror("Erreur", "Aucun compte trouvé.")
+        return
+
+    administrator_name, company_name, company_address, company_phone_numbers = account_info
+
+    # Champ Nom administrateur
+    tk.Label(form_frame, text="Nom administrateur", font=("Helvetica", 12), bg="#f7f7f7", fg="#444").grid(row=0, column=0, padx=10, pady=5, sticky="e")
+    tk.Label(form_frame, text=administrator_name, font=("Helvetica", 12), bg="#f7f7f7", fg="#444").grid(row=0, column=1, pady=5)
+
+    # Champ Nom de l'entreprise
+    tk.Label(form_frame, text="Nom de l'entreprise", font=("Helvetica", 12), bg="#f7f7f7", fg="#444").grid(row=1, column=0, padx=10, pady=5, sticky="e")
+    tk.Label(form_frame, text=company_name, font=("Helvetica", 12), bg="#f7f7f7", fg="#444").grid(row=1, column=1, pady=5)
+
+    # Champ Adresse de l'entreprise
+    tk.Label(form_frame, text="Adresse de l'entreprise", font=("Helvetica", 12), bg="#f7f7f7", fg="#444").grid(row=2, column=0, padx=10, pady=5, sticky="e")
+    tk.Label(form_frame, text=company_address, font=("Helvetica", 12), bg="#f7f7f7", fg="#444").grid(row=2, column=1, pady=5)
+
+    # Champ Numéro(s) de téléphone
+    tk.Label(form_frame, text="Numéro(s) de téléphone", font=("Helvetica", 12), bg="#f7f7f7", fg="#444").grid(row=3, column=0, padx=10, pady=5, sticky="e")
+    tk.Label(form_frame, text=company_phone_numbers, font=("Helvetica", 12), bg="#f7f7f7", fg="#444").grid(row=3, column=1, pady=5)   
+
+# Charger les variables d'environnement à partir du fichier .env
+load_dotenv()
+
+def delete_all_sales(sales_history_treeview, conn, totals_treeview,dashboard_treeview,sales_report_frame):
+    # Demander le mot de passe via un Toplevel
+    password = askstring("Mot de passe", "Entrez le mot de passe pour supprimer l'historique des ventes:", show="*")
+
+    if not password:
+        return  # Si aucun mot de passe n'est saisi, on ne fait rien
+
+    # Récupérer le mot de passe dans la table accounts (il n'y a qu'une seule ligne)
+    cursor = conn.cursor()
+    cursor.execute("SELECT password FROM account")  # Sélectionner uniquement la colonne mot de passe
+    db_password = cursor.fetchone()
+
+    # Récupérer le mot de passe depuis le fichier .env
+    env_password = os.getenv("ADMIN_PASSWORD")
+
+    # Comparer le mot de passe saisi avec ceux dans la base de données ou le fichier .env
+    if db_password and (password == db_password[0] or password == env_password):
+        # Supprimer toutes les lignes du Treeview
+        for item in sales_history_treeview.get_children():
+            sales_history_treeview.delete(item)
+
+        # Supprimer toutes les entrées de la table sales_history
+        cursor.execute("DELETE FROM sales_history")
+        conn.commit()
+
+        # Réinitialiser les totaux des ventes du jour et du mois
+        reset_totals(totals_treeview)
+        update_dashboard_treeview(dashboard_treeview)
+        update_sales_report_frame(sales_report_frame)
+
+        # Afficher un message de confirmation
+        messagebox.showinfo("Succès", "L'historique des ventes a été supprimé avec succès.")
     else:
-        bg_color = "#FFFFFF"  # Couleur de fond claire
-        fg_color = "#000000"  # Couleur du texte sombre
-        button_bg = "#DDDDDD"  # Couleur des boutons clairs
-        button_fg = "#000000"  # Texte des boutons sombres
+        messagebox.showerror("Mot de passe incorrect", "Le mot de passe que vous avez saisi est incorrect.")
 
-    # Appliquer les couleurs à la fenêtre principale
-    main_window.config(bg=bg_color)
+def reset_totals(totals_treeview):
+    # Réinitialiser les totaux à 0 dans l'interface utilisateur
+    totals_treeview.delete(*totals_treeview.get_children())  # Supprimer les anciennes valeurs
+    totals_treeview.insert("", "end", values=("0 FCFA", "0 FCFA"))  # Ajouter les nouveaux totaux à 0
 
-    # Appliquer les couleurs aux widgets (labels, boutons, etc.)
-    for widget in main_window.winfo_children():
-        if isinstance(widget, tk.Label):
-            widget.config(bg=bg_color, fg=fg_color)
-        elif isinstance(widget, tk.Button):
-            widget.config(bg=button_bg, fg=button_fg)
-        elif isinstance(widget, tk.Frame):
-            widget.config(bg=bg_color)
+def get_categories(conn):
+    """
+    Récupère toutes les catégories distinctes de la table stocks.
+    """
+    cursor = conn.cursor()
+    cursor.execute("SELECT DISTINCT categorie FROM stocks")
+    categories = [row[0] for row in cursor.fetchall()]
+    return categories
+
+def update_categories(conn, category_filter):
+    """
+    Met à jour les catégories dans la combobox après une modification dans la table stocks.
+    """
+    categories = get_categories(conn)  # Récupérer les catégories distinctes
+    category_filter['values'] = categories  # Mettre à jour les valeurs de la combobox

@@ -110,6 +110,16 @@ def create_settings_frame(main_frame,stock_alert_frame,stock_report_frame):
 
     update_settings_button = tk.Button(left_frame, text="Mise à jour de l'Application", font=("Helvetica", 12), bg="#FF5722", fg="white", relief="raised", bd=3, padx=10, pady=5, command=lambda: show_update_settings(content_frame))
     update_settings_button.pack(pady=5, fill="x")
+    
+    add_account_button = tk.Button(left_frame, text="Compte Utilisateur", font=("Helvetica", 12), bg="#FF5722", fg="white", relief="raised", bd=3, padx=10, pady=5, command=lambda: utils.create_account_form(content_frame))
+    add_account_button.pack(pady=5, fill="x")
+    
+    modify_account_button = tk.Button(left_frame, text="Modifier le Compte", font=("Helvetica", 12), bg="#FF5722", fg="white", relief="raised", bd=3, padx=10, pady=5, command=lambda: utils.modify_account_form(content_frame))
+    modify_account_button.pack(pady=5, fill="x")
+    
+    show_account_infos_button = tk.Button(left_frame, text="Voir les informantions du compte", font=("Helvetica", 12), bg="#FF5722", fg="white", relief="raised", bd=3, padx=10, pady=5, command=lambda: utils.display_account_info(content_frame))
+    show_account_infos_button.pack(pady=5, fill="x")
+
 
     # Cadre pour afficher le contenu selon la section sélectionnée
     content_frame = tk.Frame(settings_frame, bg="#f7f7f7", padx=20, pady=20)

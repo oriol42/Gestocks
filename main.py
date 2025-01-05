@@ -16,6 +16,8 @@ import time
 # Créer la fenêtre principale
 root = tk.Tk()
 root.title("Gestion de l'Application")
+icon_path = os.path.join(os.path.dirname(__file__),'assets','icon.ico')
+root.iconbitmap(icon_path)
 
 # Taille de la fenêtre principale
 window_width = 1024
@@ -102,9 +104,11 @@ def show_loading_screen():
             frames = {}
 
             # Création des frames
-            sales_history_frame, sale_history_treeview, totals_frame, totals_treeview = create_sales_history_frame(root)
+            
             dashboard_frame, dashboard_treeview, stock_alert_frame = create_dashboard_frame(root)
+            
             report_frame, sales_report_frame, stock_report_frame = create_reports_frame(root)
+            sales_history_frame, sale_history_treeview, totals_frame, totals_treeview = create_sales_history_frame(root,dashboard_treeview,sales_report_frame)
             sales_frame, sales_treeview = create_sales_frame(
                 root, conn, sale_history_treeview, totals_treeview,
                 dashboard_treeview, stock_alert_frame, sales_report_frame, stock_report_frame
