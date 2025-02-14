@@ -1,24 +1,25 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+import customtkinter as ctk
 import utils
 
 def create_suppliers_frame(main_frame, conn):
-    suppliers_frame = tk.Frame(main_frame, bg="#f4f4f9")  # Couleur de fond plus douce
-    tk.Label(suppliers_frame, text="Gestion des Fournisseurs", font=("Helvetica", 18, "bold"), bg="#f4f4f9", fg="#333333").pack(pady=20)
+    suppliers_frame = ctk.CTkFrame(main_frame, corner_radius=10, fg_color="#f8f9fa")
+    ctk.CTkLabel(suppliers_frame, text="Gestion des Fournisseurs", font=("Helvetica", 18, "bold"), text_color="#333").pack(pady=20)
 
     # **Barre de recherche**
-    search_frame = tk.Frame(suppliers_frame, bg="#f4f4f9")
+    search_frame = ctk.CTkFrame(suppliers_frame, corner_radius=10, fg_color="#f8f9fa")
     search_frame.pack(pady=10)
 
-    tk.Label(search_frame, text="Rechercher un fournisseur par :", font=("Helvetica", 12), bg="#f4f4f9", fg="#333333").pack(side=tk.LEFT, padx=10)
+    ctk.CTkLabel(search_frame, text="Rechercher un fournisseur par :", font=("Helvetica", 14), text_color="#333").pack(side=ctk.LEFT, padx=10)
 
     # Option pour choisir le critère de recherche (Nom ou Produit livré)
     search_criteria = tk.StringVar(value="Nom")
-    criteria_menu = tk.OptionMenu(search_frame, search_criteria, "Nom", "Produit livré")
-    criteria_menu.pack(side=tk.LEFT, padx=10)
+    criteria_menu = ctk.CTkOptionMenu(search_frame, variable=search_criteria, values=["Nom", "Produit livré"], font=("Helvetica", 14),)
+    criteria_menu.pack(side=ctk.LEFT, padx=10)
 
-    search_entry = tk.Entry(search_frame, font=("Helvetica", 12), width=25, bd=2, relief="solid", highlightthickness=1)
-    search_entry.pack(side=tk.LEFT, padx=10)
+    search_entry = ctk.CTkEntry(search_frame, font=("Helvetica", 14), width=80)
+    search_entry.pack(side=ctk.LEFT, padx=10)
 
     # Fonction de recherche qui sera appelée lors du clic sur le bouton
     def search_suppliers():
@@ -30,29 +31,28 @@ def create_suppliers_frame(main_frame, conn):
         else:
             messagebox.showwarning("Erreur", "Veuillez entrer un critère de recherche.", parent=suppliers_frame)
 
-    search_button = tk.Button(search_frame, text="Rechercher", font=("Helvetica", 12), bg="#2196F3", fg="white", command=search_suppliers)
-    search_button.pack(side=tk.LEFT, padx=5)
-    reset_button = tk.Button(search_frame, text="Rafraichir", font=("Helvetica", 12), bg="#2196F3", fg="white", command = lambda: utils.load_suppliers_from_db(suppliers_treeview,conn))
-    reset_button.pack(side=tk.LEFT, padx=5)
+    search_button = ctk.CTkButton(search_frame, text="Rechercher", font=("Helvetica", 14), fg_color="#2196F3", text_color="white", command=search_suppliers)
+    search_button.pack(side=ctk.LEFT, padx=5)
+
+    reset_button = ctk.CTkButton(search_frame, text="Rafraichir", font=("Helvetica", 14), fg_color="#2196F3", text_color="white", command=lambda: utils.load_suppliers_from_db(suppliers_treeview, conn))
+    reset_button.pack(side=ctk.LEFT, padx=5)
 
     # **Tableau des fournisseurs avec barre de défilement**
-    suppliers_treeview_frame = tk.Frame(suppliers_frame)
-    suppliers_treeview_frame.pack(pady=20, padx=20, fill=tk.X)
+    suppliers_treeview_frame = ctk.CTkFrame(suppliers_frame)
+    suppliers_treeview_frame.pack(pady=20, padx=20, fill=ctk.X)
 
     suppliers_treeview = ttk.Treeview(
         suppliers_treeview_frame,
-        columns=("Nom", "Contact", "Adresse", "Téléphone", "Email", "Produit livré", "Historique Commandes"),
+        columns=("Nom", "Contact", "Adresse", "Email", "Produit livré"),
         show="headings"
     )
     suppliers_treeview.heading("#1", text="Nom")
     suppliers_treeview.heading("#2", text="Contact")
     suppliers_treeview.heading("#3", text="Adresse")
-    suppliers_treeview.heading("#4", text="Téléphone")
-    suppliers_treeview.heading("#5", text="Email")
-    suppliers_treeview.heading("#6", text="Produit livré")
-    suppliers_treeview.heading("#7", text="Historique Commandes")
+    suppliers_treeview.heading("#4", text="Email")
+    suppliers_treeview.heading("#5", text="Produit livré")
 
-    # **Barres de défilement**
+    # **Barres de défilement classiques**
     vsb = tk.Scrollbar(suppliers_treeview_frame, orient="vertical", command=suppliers_treeview.yview)
     vsb.pack(side=tk.RIGHT, fill=tk.Y)
 
@@ -60,22 +60,22 @@ def create_suppliers_frame(main_frame, conn):
     hsb.pack(side=tk.BOTTOM, fill=tk.X)
 
     suppliers_treeview.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
-    suppliers_treeview.pack(fill=tk.BOTH, expand=True)
+    suppliers_treeview.pack(fill=ctk.BOTH, expand=True)
 
     # Charger les fournisseurs depuis la base de données
     utils.load_suppliers_from_db(suppliers_treeview, conn)
 
     # Boutons pour ajouter, modifier et supprimer
-    button_frame = tk.Frame(suppliers_frame, bg="#f4f4f9")
+    button_frame = ctk.CTkFrame(suppliers_frame, corner_radius=10, fg_color="#f4f4f9")
     button_frame.pack(pady=20)
 
-    add_button = tk.Button(button_frame, text="Ajouter", font=("Helvetica", 12), bg="#4CAF50", fg="white", command=lambda: utils.add_supplier(suppliers_treeview, conn))
-    add_button.pack(side=tk.LEFT, padx=10)
+    add_button = ctk.CTkButton(button_frame, text="Ajouter", font=("Helvetica", 14), fg_color="#4CAF50", text_color="white", command=lambda: utils.add_supplier(suppliers_treeview, conn))
+    add_button.pack(side=ctk.LEFT, padx=10)
 
-    edit_button = tk.Button(button_frame, text="Modifier", font=("Helvetica", 12), bg="#FFC107", fg="white", command=lambda: utils.edit_supplier(suppliers_treeview, conn))
-    edit_button.pack(side=tk.LEFT, padx=10)
+    edit_button = ctk.CTkButton(button_frame, text="Modifier", font=("Helvetica", 14), fg_color="#FFC107", text_color="white", command=lambda: utils.edit_supplier(suppliers_treeview, conn))
+    edit_button.pack(side=ctk.LEFT, padx=10)
 
-    delete_button = tk.Button(button_frame, text="Supprimer", font=("Helvetica", 12), bg="#F44336", fg="white", command=lambda: utils.delete_supplier(suppliers_treeview, conn))
-    delete_button.pack(side=tk.LEFT, padx=10)
+    delete_button = ctk.CTkButton(button_frame, text="Supprimer", font=("Helvetica", 14), fg_color="#F44336", text_color="white", command=lambda: utils.delete_supplier(suppliers_treeview, conn))
+    delete_button.pack(side=ctk.LEFT, padx=10)
 
     return suppliers_frame

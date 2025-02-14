@@ -6,7 +6,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from PIL import ImageGrab
 from datetime import datetime
-
+import customtkinter as ctk  # Importation de CustomTkinter
 
 # Fonction d'affichage de la section Rapports
 def create_reports_frame(main_frame):
@@ -27,7 +27,6 @@ def create_reports_frame(main_frame):
     ventes_totales_aujourdhui, ventes_totales_mois = utils.get_ventes_totales() #Calcul des ventes totales
     pourcentage_hier, pourcentage_mois = utils.get_comparaison_ventes()
   
-    
     # Utilisation de grid pour l'alignement compact
     tk.Label(sales_report_frame, text=f"Chiffre d'Affaires Mensuel : {chiffre_affaire} FCFA", font=("Helvetica", 12), bg="#ffffff", fg="#333").grid(row=0, column=0, sticky="w", pady=4)
     
@@ -92,8 +91,6 @@ def create_reports_frame(main_frame):
 
     # Affichage du texte dans le label
     tk.Label(stock_report_frame, text=texte_reapprovisionnement, font=("Helvetica", 12), bg="#ffffff", fg="#D32F2F").pack(anchor="w",pady=4)
-    
-
 
     # Cadre pour les dépenses liées au stock
     expense_frame = tk.Frame(reports_frame, bg="#ffffff", bd=3, relief="solid", padx=10, pady=10)
@@ -102,12 +99,17 @@ def create_reports_frame(main_frame):
     # Calcul dynamique des dépenses liées au stock
     tk.Label(expense_frame, text=f"Dépenses liées au Stock : ", font=("Helvetica", 12), bg="#ffffff", fg="#333").grid(row=0, column=0, sticky="w", pady=4)
     
-    # Bouton pour exporter le rapport
-    export_button = tk.Button(reports_frame, text="Exporter Rapport", font=("Helvetica", 12), bg="#FF9800", fg="white", relief="raised", command=lambda: export_report(reports_frame))
+    # Bouton pour exporter le rapport avec CustomTkinter
+    export_button = ctk.CTkButton(reports_frame, 
+                                  text="Exporter Rapport", 
+                                  font=("Helvetica", 12), 
+                                  fg_color="#FF9800",  # Couleur de fond du bouton
+                                  hover_color="#FF5722",  # Couleur au survol
+                                  text_color="white", 
+                                  command=lambda: export_report(reports_frame))
     export_button.pack(pady=15, ipadx=10, ipady=5)
 
-    return reports_frame,sales_report_frame,stock_report_frame
-
+    return reports_frame, sales_report_frame, stock_report_frame
 
 
 # Fonction pour créer un dossier 'rapports' dans 'Documents'

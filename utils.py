@@ -878,10 +878,9 @@ def add_supplier(suppliers_treeview, conn):
         nom = nom_entry.get().strip()
         contact = contact_entry.get().strip()
         adresse = adresse_entry.get().strip()
-        telephone = telephone_entry.get().strip()
         email = email_entry.get().strip()
         produit_livre = produit_livre_entry.get().strip()
-        historique_commandes = historique_entry.get().strip()
+
 
         if not nom:
             messagebox.showerror("Erreur", "Le nom est obligatoire.", parent=add_window)
@@ -895,13 +894,13 @@ def add_supplier(suppliers_treeview, conn):
         # Ajouter dans la base de données
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO fournisseurs (nom, contact, adresse, telephone, email, produit_livre, historique_commandes)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (nom, contact, adresse, telephone, email, produit_livre, historique_commandes))
+            INSERT INTO fournisseurs (nom, contact, adresse, email, produit_livre)
+            VALUES (?, ?, ?, ?, ?)
+        """, (nom, contact, adresse, email, produit_livre))
         conn.commit()
 
         # Ajouter dans le Treeview
-        suppliers_treeview.insert("", "end", values=(nom, contact, adresse, telephone, email, produit_livre, historique_commandes))
+        suppliers_treeview.insert("", "end", values=(nom, contact, adresse, email, produit_livre))
         messagebox.showinfo("Succès", "Fournisseur ajouté avec succès.", parent=add_window)
         add_window.destroy()
 
@@ -924,24 +923,16 @@ def add_supplier(suppliers_treeview, conn):
     adresse_entry = tk.Entry(add_window, width=30)
     adresse_entry.grid(row=2, column=1, sticky="w", padx=10, pady=10)
 
-    tk.Label(add_window, text="Téléphone :").grid(row=3, column=0, sticky="w", padx=10, pady=10)
-    telephone_entry = tk.Entry(add_window, width=30)
-    telephone_entry.grid(row=3, column=1, sticky="w", padx=10, pady=10)
-
-    tk.Label(add_window, text="Email :").grid(row=4, column=0, sticky="w", padx=10, pady=10)
+    tk.Label(add_window, text="Email :").grid(row=3, column=0, sticky="w", padx=10, pady=10)
     email_entry = tk.Entry(add_window, width=30)
-    email_entry.grid(row=4, column=1, sticky="w", padx=10, pady=10)
+    email_entry.grid(row=3, column=1, sticky="w", padx=10, pady=10)
 
-    tk.Label(add_window, text="Produit livré :").grid(row=5, column=0, sticky="w", padx=10, pady=10)
+    tk.Label(add_window, text="Produit livré :").grid(row=4, column=0, sticky="w", padx=10, pady=10)
     produit_livre_entry = tk.Entry(add_window, width=30)
-    produit_livre_entry.grid(row=5, column=1, sticky="w", padx=10, pady=10)
-
-    tk.Label(add_window, text="Historique Commandes :").grid(row=6, column=0, sticky="w", padx=10, pady=10)
-    historique_entry = tk.Entry(add_window, width=30)
-    historique_entry.grid(row=6, column=1, sticky="w", padx=10, pady=10)
+    produit_livre_entry.grid(row=4, column=1, sticky="w", padx=10, pady=10)
 
     # Bouton de sauvegarde
-    tk.Button(add_window, text="Enregistrer", command=save_supplier).grid(row=7, column=1, padx=10, pady=10)
+    tk.Button(add_window, text="Enregistrer", command=save_supplier).grid(row=5, column=1, padx=10, pady=10)
 
 def delete_supplier(suppliers_treeview, conn):
     selected_item = suppliers_treeview.selection()
@@ -988,10 +979,9 @@ def edit_supplier(suppliers_treeview, conn):
         nom = nom_entry.get().strip()
         contact = contact_entry.get().strip()
         adresse = adresse_entry.get().strip()
-        telephone = telephone_entry.get().strip()
         email = email_entry.get().strip()
         produit_livre = produit_livre_entry.get().strip()
-        historique_commandes = historique_entry.get().strip()
+
 
         if not nom:
             messagebox.showerror("Erreur", "Le nom est obligatoire.", parent=edit_window)
@@ -1006,13 +996,13 @@ def edit_supplier(suppliers_treeview, conn):
         cursor = conn.cursor()
         cursor.execute("""
             UPDATE fournisseurs
-            SET nom = ?, contact = ?, adresse = ?, telephone = ?, email = ?, produit_livre = ?, historique_commandes = ?
+            SET nom = ?, contact = ?, adresse = ?, email = ?, produit_livre = ?
             WHERE nom = ? AND contact = ?
-        """, (nom, contact, adresse, telephone, email, produit_livre, historique_commandes, current_values[0], current_values[1]))
+        """, (nom, contact, adresse, email, produit_livre, current_values[0], current_values[1]))
         conn.commit()
 
         # Mettre à jour le Treeview
-        suppliers_treeview.item(selected_item, values=(nom, contact, adresse, telephone, email, produit_livre, historique_commandes))
+        suppliers_treeview.item(selected_item, values=(nom, contact, adresse, email, produit_livre, ))
         messagebox.showinfo("Succès", "Fournisseur modifié avec succès.", parent=edit_window)
         edit_window.destroy()
 
@@ -1038,28 +1028,19 @@ def edit_supplier(suppliers_treeview, conn):
     adresse_entry.insert(0, current_values[2])
     adresse_entry.grid(row=2, column=1, padx=10, pady=10, sticky="w")
 
-    tk.Label(edit_window, text="Téléphone :").grid(row=3, column=0, padx=10, pady=10, sticky="w")
-    telephone_entry = tk.Entry(edit_window, width=30)
-    telephone_entry.insert(0, current_values[3])
-    telephone_entry.grid(row=3, column=1, padx=10, pady=10, sticky="w")
-
-    tk.Label(edit_window, text="Email :").grid(row=4, column=0, padx=10, pady=10, sticky="w")
+    tk.Label(edit_window, text="Email :").grid(row=3, column=0, padx=10, pady=10, sticky="w")
     email_entry = tk.Entry(edit_window, width=30)
     email_entry.insert(0, current_values[4])
-    email_entry.grid(row=4, column=1, padx=10, pady=10, sticky="w")
+    email_entry.grid(row=3, column=1, padx=10, pady=10, sticky="w")
 
     tk.Label(edit_window, text="Produit livré :").grid(row=5, column=0, padx=10, pady=10, sticky="w")
     produit_livre_entry = tk.Entry(edit_window, width=30)
     produit_livre_entry.insert(0, current_values[5])
     produit_livre_entry.grid(row=5, column=1, padx=10, pady=10, sticky="w")
 
-    tk.Label(edit_window, text="Historique Commandes :").grid(row=6, column=0, padx=10, pady=10, sticky="w")
-    historique_entry = tk.Entry(edit_window, width=30)
-    historique_entry.insert(0, current_values[6])
-    historique_entry.grid(row=6, column=1, padx=10, pady=10, sticky="w")
 
     # Bouton de sauvegarde
-    tk.Button(edit_window, text="Enregistrer", command=save_changes).grid(row=7, column=1, padx=10, pady=10)
+    tk.Button(edit_window, text="Enregistrer", command=save_changes).grid(row=6, column=1, padx=10, pady=10)
 
 def load_suppliers_from_db(treeview, conn):
     
@@ -1076,7 +1057,7 @@ def load_suppliers_from_db(treeview, conn):
         treeview.delete(row)
 
     # Requête SQL pour récupérer les fournisseurs
-    query = "SELECT nom,contact,adresse,telephone,email,produit_livre,historique_commandes FROM fournisseurs"
+    query = "SELECT nom,contact,adresse,email,produit_livre FROM fournisseurs"
     cursor = conn.cursor()
     cursor.execute(query)
 
@@ -1103,7 +1084,7 @@ def search_supplier(suppliers_treeview, conn, search_value, criteria):
     # Requête SQL pour rechercher par le critère choisi
     cursor = conn.cursor()
     cursor.execute(f"""
-        SELECT nom, contact, adresse, telephone, email, produit_livre, historique_commandes
+        SELECT nom, contact, adresse,email, produit_livre
         FROM fournisseurs
         WHERE LOWER({column}) LIKE ?
     """, (f"%{search_value}%",))

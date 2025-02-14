@@ -71,7 +71,7 @@ def create_sales_history_frame(main_frame,dashboard_treeview,sales_report_frame)
             total_sales_month += float(sale[4])
 
     # Ajouter un bouton pour supprimer une vente sélectionnée sans aucune action
-    delete_button = tk.Button(sales_history_frame, text="Supprimer la vente", command=lambda: utils.delete_all_sales(sales_history_treeview,conn,totals_treeview,dashboard_treeview,sales_report_frame),
+    delete_button = tk.Button(sales_history_frame, text="Supprimer l'historique", command=lambda: utils.delete_all_sales(sales_history_treeview,conn,totals_treeview,dashboard_treeview,sales_report_frame),
                               font=("Helvetica", 12, "bold"), bg="#ff4d4d", fg="white", relief="flat",
                               padx=20, pady=10, bd=0, activebackground="#ff3333", activeforeground="white",)
     delete_button.pack(pady=10)

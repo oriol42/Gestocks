@@ -11,12 +11,12 @@ from reports import create_reports_frame
 from settings import create_settings_frame
 from utils import connect_database, update_table_structure, show_frame
 import time
-
+import customtkinter as ctk
 
 # Créer la fenêtre principale
-root = tk.Tk()
+root = ctk.CTk()
 root.title("Gestocks")
-icon_path = os.path.join(os.path.dirname(__file__),'assets','icon.ico')
+icon_path = os.path.join(os.path.dirname(__file__), 'assets', 'icon.ico')
 root.iconbitmap(icon_path)
 
 # Taille de la fenêtre principale
@@ -25,14 +25,22 @@ window_height = 800
 root.geometry(f"{window_width}x{window_height}")
 root.resizable(True, True)  # Permettre le redimensionnement de la fenêtre
 
+# Couleurs améliorées
+app_bg_color = "#D5DBDB"  # Gris clair pour l'application
+menu_bg_color = "#34495E"  # Couleur plus sombre pour le menu
+loading_bg_color = "#2C3E50"  # Couleur d'arrière-plan plus sombre pour l'écran de chargement
+
+# Appliquer la couleur de fond à toute l'application
+root.configure(fg_color=app_bg_color)
+
 # Fonction pour afficher l'écran de chargement
 def show_loading_screen():
     # Créer une frame pour l'écran de chargement qui occupe toute la fenêtre
-    loading_frame = tk.Frame(root, width=window_width, height=window_height, bg="#2C3E50")  # Bleu Marine
+    loading_frame = ctk.CTkFrame(root, width=window_width, height=window_height, corner_radius=0, fg_color=loading_bg_color)  # Utilisation de CTkFrame avec couleur de fond
     loading_frame.place(relwidth=1, relheight=1)  # Utilisation de relwidth et relheight pour occuper toute la fenêtre
 
     # Animation pour le texte "Gestocks"
-    label = tk.Label(loading_frame, text="Gestocks", font=("Arial", 60, "bold"), fg="#ECF0F1", bg="#2C3E50")
+    label = ctk.CTkLabel(loading_frame, text="Gestocks", font=("Arial", 60, "bold"), text_color="#ECF0F1", fg_color=loading_bg_color)
     label.pack(pady=100)
     
     # Liste de couleurs professionnelles à utiliser
@@ -44,7 +52,7 @@ def show_loading_screen():
         
         def update_text():
             nonlocal index
-            label.config(text=text[:index], fg=colors[index % len(colors)])  # Change la couleur à chaque lettre
+            label.configure(text=text[:index], text_color=colors[index % len(colors)])  # Change la couleur à chaque lettre
             index += 1
             if index <= len(text):
                 label.after(300, update_text)  # Ajouter une lettre toutes les 300ms
@@ -54,7 +62,7 @@ def show_loading_screen():
     animate_label()  # Lancer l'animation du texte "Gestocks"
     
     # Ajouter les étapes de chargement en bas
-    steps_label = tk.Label(loading_frame, text="Chargement...", font=("Arial", 16), fg="#ECF0F1", bg="#2C3E50")
+    steps_label = ctk.CTkLabel(loading_frame, text="Chargement...", font=("Arial", 16), text_color="#ECF0F1", fg_color=loading_bg_color)
     steps_label.pack(side="bottom", pady=30)
 
     # Animation des étapes de chargement
@@ -66,7 +74,7 @@ def show_loading_screen():
         # Vérifier si le loading_frame existe toujours avant d'essayer de mettre à jour l'étiquette
         if loading_frame.winfo_exists():
             if current_step < len(steps):
-                steps_label.config(text=steps[current_step])
+                steps_label.configure(text=steps[current_step])  # Utilisation de configure() au lieu de config()
                 current_step += 1
                 root.after(2500, update_loading_step)  # Changer le message toutes les 2,5 secondes
         else:
@@ -86,7 +94,7 @@ def show_loading_screen():
         canvas.itemconfig(arc, extent=new_extent)
         canvas.after(50, rotate_arc, arc, canvas)
 
-    canvas = tk.Canvas(loading_frame, width=200, height=200, bg="#2C3E50", bd=0, highlightthickness=0)  # Enlever le bord
+    canvas = ctk.CTkCanvas(loading_frame, width=200, height=200, bg=loading_bg_color, bd=0, highlightthickness=0)  # Enlever le bord
     canvas.pack(side="bottom", pady=30)
     create_circular_loader(canvas, 200, 200)
 
@@ -104,57 +112,44 @@ def show_loading_screen():
             frames = {}
 
             # Création des frames
-            
             dashboard_frame, dashboard_treeview, stock_alert_frame = create_dashboard_frame(root)
-            
             report_frame, sales_report_frame, stock_report_frame = create_reports_frame(root)
-            sales_history_frame, sale_history_treeview, totals_frame, totals_treeview = create_sales_history_frame(root,dashboard_treeview,sales_report_frame)
+            sales_history_frame, sale_history_treeview, totals_frame, totals_treeview = create_sales_history_frame(root, dashboard_treeview, sales_report_frame)
             sales_frame, sales_treeview = create_sales_frame(
                 root, conn, sale_history_treeview, totals_treeview,
                 dashboard_treeview, stock_alert_frame, sales_report_frame, stock_report_frame
             )
             products_treeview = sales_treeview
 
-            # Menu principal
-            menubar = tk.Menu(root)
+            # Menu principal (remplacé par des boutons)
+            frame_menu = ctk.CTkFrame(root, fg_color=menu_bg_color, height=40)  # Utilisation de CTkFrame
+            frame_menu.pack(fill="x", side="top")  # Remplir la largeur du haut de la fenêtre
 
-            # Menu Tableau de Bord
-            menu_dashboard = tk.Menu(menubar, tearoff=0)
-            menu_dashboard.add_command(label="Tableau de Bord", command=lambda: show_frame("dashboard", frames))
-            menubar.add_cascade(label="Tableau de Bord", menu=menu_dashboard)
+            # Fonction pour afficher le bon cadre
+            def change_frame(frame_name):
+                show_frame(frame_name, frames)
 
-            # Menu Ventes
-            menu_sales = tk.Menu(menubar, tearoff=0)
-            menu_sales.add_command(label="Ventes", command=lambda: show_frame("sales", frames))
-            menubar.add_cascade(label="Ventes", menu=menu_sales)
+            # Créer des boutons pour chaque section
+            button_dashboard = ctk.CTkButton(frame_menu, text="Tableau de Bord", command=lambda: change_frame("dashboard"), fg_color="#2980B9", text_color="white", width=20)
+            button_dashboard.pack(side="left", padx=10, pady=5)
 
-            # Menu Historique des ventes
-            menu_sales_history = tk.Menu(menubar, tearoff=0)
-            menu_sales_history.add_command(label="Historique des Ventes", command=lambda: show_frame("sales_history", frames))
-            menubar.add_cascade(label="Historique des Ventes", menu=menu_sales_history)
+            button_sales = ctk.CTkButton(frame_menu, text="Ventes", command=lambda: change_frame("sales"), fg_color="#2980B9", text_color="white", width=20)
+            button_sales.pack(side="left", padx=10, pady=5)
 
-            # Menu Stocks
-            menu_stocks = tk.Menu(menubar, tearoff=0)
-            menu_stocks.add_command(label="Stocks", command=lambda: show_frame("stocks", frames))
-            menubar.add_cascade(label="Stocks", menu=menu_stocks)
+            button_sales_history = ctk.CTkButton(frame_menu, text="Historique des Ventes", command=lambda: change_frame("sales_history"), fg_color="#2980B9", text_color="white", width=20)
+            button_sales_history.pack(side="left", padx=10, pady=5)
 
-            # Menu Fournisseurs
-            menu_suppliers = tk.Menu(menubar, tearoff=0)
-            menu_suppliers.add_command(label="Fournisseurs", command=lambda: show_frame("suppliers", frames))
-            menubar.add_cascade(label="Fournisseurs", menu=menu_suppliers)
+            button_stocks = ctk.CTkButton(frame_menu, text="Stocks", command=lambda: change_frame("stocks"), fg_color="#2980B9", text_color="white", width=20)
+            button_stocks.pack(side="left", padx=10, pady=5)
 
-            # Menu Rapports
-            menu_reports = tk.Menu(menubar, tearoff=0)
-            menu_reports.add_command(label="Rapports", command=lambda: show_frame("reports", frames))
-            menubar.add_cascade(label="Rapports", menu=menu_reports)
+            button_suppliers = ctk.CTkButton(frame_menu, text="Fournisseurs", command=lambda: change_frame("suppliers"), fg_color="#2980B9", text_color="white", width=20)
+            button_suppliers.pack(side="left", padx=10, pady=5)
 
-            # Menu Paramètres
-            menu_settings = tk.Menu(menubar, tearoff=0)
-            menu_settings.add_command(label="Paramètres", command=lambda: show_frame("settings", frames))
-            menubar.add_cascade(label="Paramètres", menu=menu_settings)
+            button_reports = ctk.CTkButton(frame_menu, text="Rapports", command=lambda: change_frame("reports"), fg_color="#2980B9", text_color="white", width=20)
+            button_reports.pack(side="left", padx=10, pady=5)
 
-            # Configurer la barre de menu
-            root.config(menu=menubar)
+            button_settings = ctk.CTkButton(frame_menu, text="Paramètres", command=lambda: change_frame("settings"), fg_color="#2980B9", text_color="white", width=20)
+            button_settings.pack(side="left", padx=10, pady=5)
 
             # Création des frames
             frames["dashboard"] = dashboard_frame
