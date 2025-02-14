@@ -8,6 +8,7 @@ from reportlab.pdfgen import canvas
 import webbrowser
 from dotenv import load_dotenv
 from tkinter.simpledialog import askstring
+import bcrypt
 
 
 
@@ -1402,41 +1403,46 @@ def create_account_form(content_frame):
         return count > 0  # Retourne True si un compte existe, sinon False
 
     # Fonction pour enregistrer le compte dans la base de données
+
     def save_account():
-        administrator_name = administrator_name_entry.get()
-        password = password_entry.get()
-        company_name = company_name_entry.get()
-        company_address = company_address_entry.get()
-        company_phone_numbers = company_phone_numbers_entry.get()
+      administrator_name = administrator_name_entry.get()
+      password = password_entry.get()
+      company_name = company_name_entry.get()
+      company_address = company_address_entry.get()
+      company_phone_numbers = company_phone_numbers_entry.get()
 
-        # Vérification des champs vides
-        if not administrator_name or not password or not company_name or not company_address or not company_phone_numbers:
-            messagebox.showwarning("Entrée invalide", "Tous les champs doivent être remplis.")
-            return
-        
-        # Vérifier si un compte existe déjà dans la base de données
-        if account_exists():
-            messagebox.showerror("Erreur", "Un compte existe déjà. La création d'un nouveau compte est impossible.")
-            return
-        
-        # Connexion à la base de données
-        db_path = os.path.join(os.path.dirname(__file__), 'DataBase', 'GESTOCK.db')
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
+      # Vérification des champs vides
+      if not administrator_name or not password or not company_name or not company_address or not company_phone_numbers:
+          messagebox.showwarning("Entrée invalide", "Tous les champs doivent être remplis.")
+          return
 
-        try:
-            # Insérer les données dans la table account
-            cursor.execute("""
-                INSERT INTO account (administrator_name, password, company_name, company_address, company_phone_numbers)
-                VALUES (?, ?, ?, ?, ?)
-            """, (administrator_name, password, company_name, company_address, company_phone_numbers))
-            
-            conn.commit()
-            messagebox.showinfo("Succès", "Compte créé avec succès.")
-        except sqlite3.Error as e:
-            messagebox.showerror("Erreur", f"Une erreur est survenue lors de la création du compte : {e}")
-        finally:
-            conn.close()
+      # Vérifier si un compte existe déjà dans la base de données
+      if account_exists():
+          messagebox.showerror("Erreur", "Un compte existe déjà. La création d'un nouveau compte est impossible.")
+          return
+
+      # Hacher le mot de passe
+      hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+
+      # Connexion à la base de données
+      db_path = os.path.join(os.path.dirname(__file__), 'DataBase', 'GESTOCK.db')
+      conn = sqlite3.connect(db_path)
+      cursor = conn.cursor()
+
+      try:
+          # Insérer les données dans la table account
+          cursor.execute("""
+              INSERT INTO account (administrator_name, password, company_name, company_address, company_phone_numbers)
+              VALUES (?, ?, ?, ?, ?)
+          """, (administrator_name, hashed_password, company_name, company_address, company_phone_numbers))
+        
+          conn.commit()
+          messagebox.showinfo("Succès", "Compte créé avec succès.")
+      except sqlite3.Error as e:
+          messagebox.showerror("Erreur", f"Une erreur est survenue lors de la création du compte : {e}")
+      finally:
+          conn.close()
+
 
     # Bouton pour soumettre le formulaire
     tk.Button(content_frame, text="Créer le compte", font=("Helvetica", 12), bg="#4CAF50", fg="white", command=save_account).pack(pady=10)
@@ -1496,47 +1502,60 @@ def modify_account_form(content_frame):
 
     # Fonction pour vérifier les mots de passe et enregistrer les modifications
     def save_account_changes():
-        # Récupérer les informations des champs
-        entered_current_password = current_password_entry.get()
-        new_administrator_name = administrator_name_entry.get()
-        new_password = new_password_entry.get()
-        new_company_name = company_name_entry.get()
-        new_company_address = company_address_entry.get()
-        new_company_phone_numbers = company_phone_numbers_entry.get()
+      # Récupérer les informations des champs
+      entered_current_password = current_password_entry.get()
+      new_administrator_name = administrator_name_entry.get()
+      new_password = new_password_entry.get()
+      new_company_name = company_name_entry.get()
+      new_company_address = company_address_entry.get()
+      new_company_phone_numbers = company_phone_numbers_entry.get()
 
-        # Connexion à la base de données pour récupérer les informations actuelles
-        db_path = os.path.join(os.path.dirname(__file__), 'DataBase', 'GESTOCK.db')
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
+      # Connexion à la base de données pour récupérer les informations actuelles
+      db_path = os.path.join(os.path.dirname(__file__), 'DataBase', 'GESTOCK.db')
+      conn = sqlite3.connect(db_path)
+      cursor = conn.cursor()
 
-        cursor.execute("SELECT * FROM account LIMIT 1")
-        account = cursor.fetchone()
-        conn.close()
+      cursor.execute("SELECT * FROM account LIMIT 1")
+      account = cursor.fetchone()
+      conn.close()
 
-        if not account:
-            messagebox.showerror("Erreur", "Aucun compte trouvé dans la base de données.")
-            return
+      if not account:
+          messagebox.showerror("Erreur", "Aucun compte trouvé dans la base de données.")
+          return
 
-        # Vérification du mot de passe actuel
-        if entered_current_password != account[1] and entered_current_password != ADMIN_PASSWORD:
-            messagebox.showerror("Erreur", "Mot de passe incorrect. La modification a échoué.")
-            return
+      hashed_password = account[1]  # Supposons que le mot de passe haché soit dans la deuxième colonne
 
-        # Mise à jour des informations du compte
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
+      # Vérification du mot de passe actuel
+      if isinstance(hashed_password, str):
+          hashed_password = hashed_password.encode('utf-8')  # Convertir en bytes si nécessaire
 
-        cursor.execute("""
-            UPDATE account
-            SET administrator_name = ?, password = ?, company_name = ?, company_address = ?, company_phone_numbers = ?
-            WHERE rowid = 1
-        """, (new_administrator_name, new_password, new_company_name, new_company_address, new_company_phone_numbers))
+      if not (bcrypt.checkpw(entered_current_password.encode('utf-8'), hashed_password) or 
+          entered_current_password == ADMIN_PASSWORD):
+          messagebox.showerror("Erreur", "Mot de passe incorrect. La modification a échoué.")
+          return
 
-        conn.commit()
-        conn.close()
+      # Hacher le nouveau mot de passe s'il est défini
+      if new_password:
+         hashed_new_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+      else:
+        hashed_new_password = hashed_password.decode('utf-8')  # Garde l'ancien mot de passe s'il n'est pas modifié
 
-        # Message de succès
-        messagebox.showinfo("Succès", "Les informations du compte ont été mises à jour avec succès.")
+      # Mise à jour des informations du compte
+      conn = sqlite3.connect(db_path)
+      cursor = conn.cursor()
+
+      cursor.execute("""
+          UPDATE account
+          SET administrator_name = ?, password = ?, company_name = ?, company_address = ?, company_phone_numbers = ?
+          WHERE rowid = 1
+      """, (new_administrator_name, hashed_new_password, new_company_name, new_company_address, new_company_phone_numbers))
+
+      conn.commit()
+      conn.close()
+
+      # Message de succès
+      messagebox.showinfo("Succès", "Les informations du compte ont été mises à jour avec succès.")
+
 
     # Bouton pour enregistrer les modifications
     tk.Button(content_frame, text="Enregistrer les modifications", font=("Helvetica", 12), bg="#4CAF50", fg="white", command=save_account_changes).pack(pady=10)
@@ -1592,14 +1611,15 @@ def display_account_info(content_frame):
 # Charger les variables d'environnement à partir du fichier .env
 load_dotenv()
 
-def delete_all_sales(sales_history_treeview, conn, totals_treeview,dashboard_treeview,sales_report_frame):
+
+def delete_all_sales(sales_history_treeview, conn, totals_treeview, dashboard_treeview, sales_report_frame):
     # Demander le mot de passe via un Toplevel
     password = askstring("Mot de passe", "Entrez le mot de passe pour supprimer l'historique des ventes:", show="*")
 
     if not password:
         return  # Si aucun mot de passe n'est saisi, on ne fait rien
 
-    # Récupérer le mot de passe dans la table accounts (il n'y a qu'une seule ligne)
+    # Récupérer le mot de passe dans la table account (il n'y a qu'une seule ligne)
     cursor = conn.cursor()
     cursor.execute("SELECT password FROM account")  # Sélectionner uniquement la colonne mot de passe
     db_password = cursor.fetchone()
@@ -1607,8 +1627,14 @@ def delete_all_sales(sales_history_treeview, conn, totals_treeview,dashboard_tre
     # Récupérer le mot de passe depuis le fichier .env
     env_password = os.getenv("ADMIN_PASSWORD")
 
+    # Vérifier le mot de passe récupéré de la base de données
+    if db_password:
+        hashed_password = db_password[0]
+        if isinstance(hashed_password, str):
+            hashed_password = hashed_password.encode('utf-8')  # Convertir en bytes si nécessaire
+
     # Comparer le mot de passe saisi avec ceux dans la base de données ou le fichier .env
-    if db_password and (password == db_password[0] or password == env_password):
+    if db_password and (bcrypt.checkpw(password.encode('utf-8'), hashed_password) or password == env_password):
         # Supprimer toutes les lignes du Treeview
         for item in sales_history_treeview.get_children():
             sales_history_treeview.delete(item)
@@ -1626,6 +1652,7 @@ def delete_all_sales(sales_history_treeview, conn, totals_treeview,dashboard_tre
         messagebox.showinfo("Succès", "L'historique des ventes a été supprimé avec succès.")
     else:
         messagebox.showerror("Mot de passe incorrect", "Le mot de passe que vous avez saisi est incorrect.")
+
 
 def reset_totals(totals_treeview):
     # Réinitialiser les totaux à 0 dans l'interface utilisateur
