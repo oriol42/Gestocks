@@ -821,41 +821,64 @@ def load_low_stock_alerts(stock_alert_frame):
     for widget in stock_alert_frame.winfo_children():
         widget.destroy()
 
-    # Récupérer les produits en rupture de stock ou proches du seuil
-    low_stock_items = get_low_stock_items()  # Récupère les produits à faible stock
-    
-    # Titre de la section
-    stock_alert_title = tk.Label(stock_alert_frame, text="Alertes de Stock Faible", font=("Helvetica", 14, "bold"), bg="#ffffff", fg="#e74c3c")
-    stock_alert_title.pack(pady=10)
+    # Créer un canvas et une scrollbar
+    canvas = tk.Canvas(stock_alert_frame, bg="#ffffff")
+    scrollbar = tk.Scrollbar(stock_alert_frame, orient="vertical", command=canvas.yview)
+    canvas.configure(yscrollcommand=scrollbar.set)
+
+    # Créer une frame qui contiendra les alertes
+    alert_frame = tk.Frame(canvas, bg="#ffffff")
+    alert_window = canvas.create_window((0, 0), window=alert_frame, anchor="nw")
+
+    # Positionner la scrollbar et le canvas
+    canvas.grid(row=0, column=0, sticky="nsew")  # Le canvas prend toute la place
+    scrollbar.grid(row=0, column=1, sticky="ns")  # La scrollbar est à droite
+
+    # Ajuster la largeur de alert_frame pour matcher canvas
+    def resize_alert_frame(event):
+        canvas.itemconfig(alert_window, width=canvas.winfo_width())
+
+    canvas.bind("<Configure>", resize_alert_frame)
+
+    # Récupérer les produits en rupture de stock
+    low_stock_items = get_low_stock_items()
+
+    # Titre
+    stock_alert_title = tk.Label(alert_frame, text="Alertes de Stock Faible", font=("Helvetica", 14, "bold"), bg="#ffffff", fg="#e74c3c")
+    stock_alert_title.grid(row=0, column=0, columnspan=4, pady=10)
 
     if not low_stock_items:
-        # Si aucun produit en rupture de stock
-        empty_label = tk.Label(stock_alert_frame, text="Aucune alerte de stock faible", font=("Helvetica", 12), bg="#ffffff", fg="#34495e")
-        empty_label.pack(pady=5)
+        empty_label = tk.Label(alert_frame, text="Aucune alerte de stock faible", font=("Helvetica", 12), bg="#ffffff", fg="#34495e")
+        empty_label.grid(row=1, column=0, columnspan=4, pady=5)
     else:
-        # Si des produits en rupture de stock sont trouvés
-        canvas = tk.Canvas(stock_alert_frame)
-        scrollbar = tk.Scrollbar(stock_alert_frame, orient="vertical", command=canvas.yview)
-        canvas.config(yscrollcommand=scrollbar.set)
+        # Variables pour organiser les cartes
+        row, col = 1, 0
+        num_columns = 4  
 
-        alert_container = tk.Frame(canvas, bg="#ffffff")
-        row, col, num_columns = 0, 0, 4  # 4 alertes par ligne
-
-        # Ajouter chaque produit en rupture de stock
         for product, stock in low_stock_items:
-            alert_card = tk.Frame(alert_container, bg="#ecf0f1", bd=1, relief="solid", padx=15, pady=10, width=230)
+            alert_card = tk.Frame(alert_frame, bg="#ecf0f1", bd=1, relief="solid", padx=15, pady=10)
             alert_card.grid(row=row, column=col, padx=10, pady=5, sticky="nsew")
+
             alert_label = tk.Label(alert_card, text=f"{product}: {stock}", font=("Helvetica", 12), bg="#ecf0f1", fg="#e74c3c")
             alert_label.pack()
+
             col += 1
             if col >= num_columns:
-                col, row = 0, row + 1
+                col = 0
+                row += 1  
 
-        canvas.create_window((0, 0), window=alert_container, anchor="nw")
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-        alert_container.update_idletasks()
-        canvas.config(scrollregion=canvas.bbox("all"))
+        # Ajuster les colonnes pour éviter l'écrasement
+        for i in range(num_columns):
+            alert_frame.grid_columnconfigure(i, weight=1)
+
+    # Mettre à jour alert_frame et la région scrollable
+    alert_frame.update_idletasks()
+    canvas.config(scrollregion=canvas.bbox("all"))
+
+    # Faire en sorte que stock_alert_frame prenne bien toute la place
+    stock_alert_frame.grid_rowconfigure(0, weight=1)
+    stock_alert_frame.grid_columnconfigure(0, weight=1)
+
     
 def add_supplier(suppliers_treeview, conn):
     def is_supplier_name_duplicate(name):

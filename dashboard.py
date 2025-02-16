@@ -1,4 +1,5 @@
 import customtkinter as ctk
+import tkinter as tk
 from tkinter import ttk
 import utils
 import sqlite3
@@ -52,39 +53,11 @@ def create_dashboard_frame(main_frame):
     stock_button.pack(pady=5)
 
     # Section des alertes de stock faible
-    stock_alert_frame = ctk.CTkFrame(dashboard_frame, fg_color="#ffffff", corner_radius=10)
-    stock_alert_frame.pack(fill="x", pady=20)
+    stock_alert_frame = tk.Frame(dashboard_frame)
+    stock_alert_frame.pack(fill="both", expand=True, pady=20)  # Remplir toute la place disponible
 
-    stock_alert_title = ctk.CTkLabel(stock_alert_frame, text="Alertes de Stock Faible", font=("Helvetica", 14, "bold"), text_color="#e74c3c")
-    stock_alert_title.pack(pady=10)
-
-    low_stock_items = utils.get_low_stock_items()
-
-    if not low_stock_items:
-        empty_label = ctk.CTkLabel(stock_alert_frame, text="Aucune alerte de stock faible", font=("Helvetica", 14), text_color="#34495e")
-        empty_label.pack(pady=5)
-    else:
-        canvas = ctk.CTkCanvas(stock_alert_frame)
-        scrollbar = ctk.CTkScrollbar(stock_alert_frame, orientation="vertical", command=canvas.yview)
-        canvas.config(yscrollcommand=scrollbar.set)
-
-        alert_container = ctk.CTkFrame(canvas, fg_color="#ffffff")
-        row, col, num_columns = 0, 0, 4
-
-        for product, stock in low_stock_items:
-            alert_card = ctk.CTkFrame(alert_container, fg_color="#ecf0f1", corner_radius=5)
-            alert_card.grid(row=row, column=col, padx=10, pady=5, sticky="nsew")
-            alert_label = ctk.CTkLabel(alert_card, text=f"{product}: {stock}", font=("Helvetica", 14), text_color="#e74c3c")
-            alert_label.pack()
-            col += 1
-            if col >= num_columns:
-                col, row = 0, row + 1
-
-        canvas.create_window((0, 0), window=alert_container, anchor="nw")
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-        alert_container.update_idletasks()
-        canvas.config(scrollregion=canvas.bbox("all"))
+    # Appeler la fonction pour charger les alertes de stock faible
+    utils.load_low_stock_alerts(stock_alert_frame)
 
     return dashboard_frame, dashboard_treeview, stock_alert_frame
 
