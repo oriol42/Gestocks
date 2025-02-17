@@ -845,11 +845,11 @@ def load_low_stock_alerts(stock_alert_frame):
 
     # Titre
     stock_alert_title = tk.Label(alert_frame, text="Alertes de Stock Faible", font=("Helvetica", 14, "bold"), bg="#ffffff", fg="#e74c3c")
-    stock_alert_title.grid(row=0, column=0, columnspan=4, pady=10)
+    stock_alert_title.grid(row=0, column=0, columnspan=4, pady=10, padx=550)
 
     if not low_stock_items:
         empty_label = tk.Label(alert_frame, text="Aucune alerte de stock faible", font=("Helvetica", 12), bg="#ffffff", fg="#34495e")
-        empty_label.grid(row=1, column=0, columnspan=4, pady=5)
+        empty_label.grid(row=1, column=0, columnspan=4, pady=5,padx=550)
     else:
         # Variables pour organiser les cartes
         row, col = 1, 0
