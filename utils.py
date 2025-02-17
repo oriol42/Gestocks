@@ -9,8 +9,13 @@ import webbrowser
 from dotenv import load_dotenv
 from tkinter.simpledialog import askstring
 import bcrypt
+import shutil 
 
-
+def get_db_path():
+    # Récupère le dossier %AppData%/Gestocks
+    db_dir = os.path.join(os.getenv('APPDATA'), "Gestocks")
+    os.makedirs(db_dir, exist_ok=True)  # Crée le dossier s'il n'existe pas
+    return os.path.join(db_dir, "GESTOCK.db")
 
 def show_frame(frame_name, frames, expand=True, fill="both"):
     """
@@ -35,7 +40,10 @@ def show_frame(frame_name, frames, expand=True, fill="both"):
 
 # Fonction pour établir la connexion à la base de données
 def connect_database():
-    db_path = os.path.join(os.path.dirname(__file__),'DataBase','GESTOCK.db')
+    db_path = get_db_path()
+    if not os.path.exists(db_path):
+     original_db_path = os.path.join(os.path.dirname(__file__), "DataBase", "GESTOCK.db")
+     shutil.copy2(original_db_path, db_path)
     conn = sqlite3.connect(db_path)
     return conn
 
@@ -139,7 +147,15 @@ def add_product(stock_treeview, conn,products_treeview,dashboard_treeview,stock_
     entry_fournisseur.grid(row=3, column=1, padx=12, pady=12)
 
     tk.Label(add_window, text="Catégorie :", font=("arial", 9)).grid(row=4, column=0, sticky="w", padx=12, pady=12)
-    categories = [] #vide pour l'instant
+    
+    db_path = get_db_path()
+    if not os.path.exists(db_path):
+     original_db_path = os.path.join(os.path.dirname(__file__), "DataBase", "GESTOCK.db")
+     shutil.copy2(original_db_path, db_path)
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("SELECT DISTINCT categorie FROM stocks")
+    categories = [row[0] for row in cursor.fetchall()]
     category_combobox = ttk.Combobox(add_window, values=categories, font=("arial", 9))
     category_combobox.grid(row=4, column=1, padx=12, pady=12)
     
@@ -221,7 +237,14 @@ def modify_product(stock_treeview, conn,products_treeview,dashboard_treeview,sto
     entry_fournisseur.grid(row=3, column=1, padx=12, pady=12)
 
     tk.Label(modify_window, text="Catégorie :", font=("arial", 9)).grid(row=4, column=0, sticky="w", padx=12, pady=12)
-    categories = []
+    db_path = get_db_path()
+    if not os.path.exists(db_path):
+      original_db_path = os.path.join(os.path.dirname(__file__), "DataBase", "GESTOCK.db")
+      shutil.copy2(original_db_path, db_path)
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("SELECT DISTINCT categorie FROM stocks")
+    categories = [row[0] for row in cursor.fetchall()]
     category_combobox = ttk.Combobox(modify_window, values=categories, font=("arial", 9))
     category_combobox.set(categorie)
     category_combobox.grid(row=4, column=1, padx=12, pady=12)
@@ -426,6 +449,7 @@ def add_to_cart(products_treeview, cart_treeview, quantity_entry, conn):
     product_name = products_treeview.item(selected_item)["values"][0]
     available_quantity = int(products_treeview.item(selected_item)["values"][1])
     price = float(products_treeview.item(selected_item)["values"][2])
+    purchase_price = float(products_treeview.item(selected_item)["values"][3])
 
     # Récupérer la quantité saisie
     try:
@@ -448,7 +472,7 @@ def add_to_cart(products_treeview, cart_treeview, quantity_entry, conn):
 
     # Mettre à jour la quantité en stock dans le Treeview de vente
     new_available_quantity = available_quantity - quantity_to_sell
-    products_treeview.item(selected_item, values=(product_name, new_available_quantity, price))
+    products_treeview.item(selected_item, values=(product_name, new_available_quantity, price,purchase_price))
    
 
     # Réinitialiser le champ de quantité
@@ -483,7 +507,7 @@ def calculate_total(cart_treeview, total_label):
         total += quantity * price
 
     # Mettre à jour l'étiquette du total avec la nouvelle valeur
-    total_label.config(text=f"{total} FCFA")
+    total_label.configure(text=f"{total} FCFA")
     
 
 def get_product_stock_by_name(product_name, conn):
@@ -723,7 +747,12 @@ def add_or_update_sale_in_history(conn, product_name, quantity_sold, unit_price,
   
 def update_totals_treeview(totals_treeview):
     # Connexion à la base de données et récupération des données de l'historique des ventes
-    db_path = os.path.join(os.path.dirname(__file__),'DataBase','GESTOCK.db')
+    db_path = get_db_path()
+    
+    if not os.path.exists(db_path):
+     original_db_path = os.path.join(os.path.dirname(__file__), "DataBase", "GESTOCK.db")
+     shutil.copy2(original_db_path, db_path)
+    
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     
@@ -744,7 +773,10 @@ def update_totals_treeview(totals_treeview):
     
 def update_dashboard_treeview(dashboard_treeview):
     # Connexion à la base de données et récupération des données de l'historique des ventes
-    db_path = os.path.join(os.path.dirname(__file__),'DataBase','GESTOCK.db')
+    db_path = get_db_path()
+    if not os.path.exists(db_path):
+     original_db_path = os.path.join(os.path.dirname(__file__), "DataBase", "GESTOCK.db")
+     shutil.copy2(original_db_path, db_path)
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     
@@ -1121,7 +1153,10 @@ def search_supplier(suppliers_treeview, conn, search_value, criteria):
         
 def get_chiffre_affaires_mensuel():
     # Connexion à la base de données
-    db_path = os.path.join(os.path.dirname(__file__),'DataBase','GESTOCK.db')
+    db_path = get_db_path()
+    if not os.path.exists(db_path):
+     original_db_path = os.path.join(os.path.dirname(__file__), "DataBase", "GESTOCK.db")
+     shutil.copy2(original_db_path, db_path)
     conn = sqlite3.connect(db_path)  # Remplace par ton chemin de base de données
     cursor = conn.cursor()
     
@@ -1147,7 +1182,10 @@ def get_chiffre_affaires_mensuel():
 
 def get_ventes_par_produit():
     # Connexion à la base de données
-    db_path = os.path.join(os.path.dirname(__file__),'DataBase','GESTOCK.db')
+    db_path = get_db_path()
+    if not os.path.exists(db_path):
+     original_db_path = os.path.join(os.path.dirname(__file__), "DataBase", "GESTOCK.db")
+     shutil.copy2(original_db_path, db_path)
     conn = sqlite3.connect(db_path)  # Remplace par ton chemin de base de données
     cursor = conn.cursor()
 
@@ -1183,7 +1221,10 @@ def get_ventes_par_produit():
 
 def get_ventes_totales():
     # Connexion à la base de données
-    db_path = os.path.join(os.path.dirname(__file__),'DataBase','GESTOCK.db')
+    db_path = get_db_path()
+    if not os.path.exists(db_path):
+     original_db_path = os.path.join(os.path.dirname(__file__), "DataBase", "GESTOCK.db")
+     shutil.copy2(original_db_path, db_path)
     conn = sqlite3.connect(db_path)  # Remplace par ton chemin de base de données
     cursor = conn.cursor()
 
@@ -1208,7 +1249,10 @@ def get_ventes_totales():
 
 def get_comparaison_ventes():
     # Connexion à la base de données
-    db_path = os.path.join(os.path.dirname(__file__),'DataBase','GESTOCK.db')
+    db_path = get_db_path()
+    if not os.path.exists(db_path):
+     original_db_path = os.path.join(os.path.dirname(__file__), "DataBase", "GESTOCK.db")
+     shutil.copy2(original_db_path, db_path)
     conn = sqlite3.connect(db_path)  # Remplace par ton chemin de base de données
     cursor = conn.cursor()
 
@@ -1291,7 +1335,10 @@ def get_rentabilite_par_produit():
     Calcule la rentabilité par produit à partir de la table 'stocks'.
     Retourne un dictionnaire avec le nom du produit et sa rentabilité.
     """
-    db_path = os.path.join(os.path.dirname(__file__),'DataBase','GESTOCK.db')
+    db_path = get_db_path()
+    if not os.path.exists(db_path):
+     original_db_path = os.path.join(os.path.dirname(__file__), "DataBase", "GESTOCK.db")
+     shutil.copy2(original_db_path, db_path)
     conn = sqlite3.connect(db_path)  # Remplace par ton chemin de base de données
     cursor = conn.cursor()
     
@@ -1312,7 +1359,10 @@ def get_rentabilite_par_produit():
 
 def get_reapprovisionnement_requis():
     # Connexion à la base de données
-    db_path = os.path.join(os.path.dirname(__file__),'DataBase','GESTOCK.db')
+    db_path = get_db_path()
+    if not os.path.exists(db_path):
+     original_db_path = os.path.join(os.path.dirname(__file__), "DataBase", "GESTOCK.db")
+     shutil.copy2(original_db_path, db_path)
     conn = sqlite3.connect(db_path)  # Remplace par ton chemin de base de données
     cursor = conn.cursor()
 
@@ -1413,7 +1463,10 @@ def create_account_form(content_frame):
 
     # Fonction pour vérifier si un compte existe déjà dans la table
     def account_exists():
-        db_path = os.path.join(os.path.dirname(__file__), 'DataBase', 'GESTOCK.db')
+        db_path = get_db_path()
+        if not os.path.exists(db_path):
+         original_db_path = os.path.join(os.path.dirname(__file__), "DataBase", "GESTOCK.db")
+         shutil.copy2(original_db_path, db_path)
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
@@ -1448,7 +1501,10 @@ def create_account_form(content_frame):
       hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
       # Connexion à la base de données
-      db_path = os.path.join(os.path.dirname(__file__), 'DataBase', 'GESTOCK.db')
+      db_path = get_db_path()
+      if not os.path.exists(db_path):
+        original_db_path = os.path.join(os.path.dirname(__file__), "DataBase", "GESTOCK.db")
+        shutil.copy2(original_db_path, db_path)
       conn = sqlite3.connect(db_path)
       cursor = conn.cursor()
 
@@ -1534,7 +1590,10 @@ def modify_account_form(content_frame):
       new_company_phone_numbers = company_phone_numbers_entry.get()
 
       # Connexion à la base de données pour récupérer les informations actuelles
-      db_path = os.path.join(os.path.dirname(__file__), 'DataBase', 'GESTOCK.db')
+      db_path = get_db_path()
+      if not os.path.exists(db_path):
+         original_db_path = os.path.join(os.path.dirname(__file__), "DataBase", "GESTOCK.db")
+         shutil.copy2(original_db_path, db_path)
       conn = sqlite3.connect(db_path)
       cursor = conn.cursor()
 
@@ -1600,7 +1659,10 @@ def display_account_info(content_frame):
     form_frame.pack(pady=10)
 
     # Connexion à la base de données pour récupérer les informations du compte
-    db_path = os.path.join(os.path.dirname(__file__), 'DataBase', 'GESTOCK.db')
+    db_path = get_db_path()
+    if not os.path.exists(db_path):
+     original_db_path = os.path.join(os.path.dirname(__file__), "DataBase", "GESTOCK.db")
+     shutil.copy2(original_db_path, db_path)
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 

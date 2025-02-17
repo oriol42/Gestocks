@@ -4,6 +4,7 @@ import sqlite3
 import os
 import utils
 import reports
+import shutil
 
 
 def show_stock_settings(content_frame,stock_alert_frame,stock_report_frame):
@@ -24,7 +25,10 @@ def show_stock_settings(content_frame,stock_alert_frame,stock_report_frame):
             messagebox.showwarning("Entree invalide", "Veuillez entrer un seuil de reapprovisionnement valide.")
         else:
             # Connexion Ã  la base de donnÃ©es
-            db_path = os.path.join(os.path.dirname(__file__),'DataBase','GESTOCK.db')  # Modifie le chemin selon ton environnement
+            db_path = utils.get_db_path() 
+            if not os.path.exists(db_path):
+               original_db_path = os.path.join(os.path.dirname(__file__), "DataBase", "GESTOCK.db")
+               shutil.copy2(original_db_path, db_path)
             conn = sqlite3.connect(db_path)
             cursor = conn.cursor()
 

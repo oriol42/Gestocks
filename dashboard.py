@@ -2,7 +2,7 @@ import customtkinter as ctk
 import tkinter as tk
 from tkinter import ttk
 import utils
-import sqlite3
+import sqlite3,shutil
 import os
 
 # Fonction d'affichage du tableau de bord
@@ -64,7 +64,10 @@ def create_dashboard_frame(main_frame):
 
 # Fonction pour afficher les produits en rupture de stock
 def view_out_of_stock(main_frame):
-    db_path = os.path.join(os.path.dirname(__file__), 'DataBase', 'GESTOCK.db')
+    db_path = utils.get_db_path()
+    if not os.path.exists(db_path):
+      original_db_path = os.path.join(os.path.dirname(__file__), "DataBase", "GESTOCK.db")
+      shutil.copy2(original_db_path, db_path)
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 

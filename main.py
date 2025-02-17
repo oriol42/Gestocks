@@ -9,8 +9,8 @@ from stocks import create_stocks_frame
 from supplier import create_suppliers_frame
 from reports import create_reports_frame
 from settings import create_settings_frame
-from utils import connect_database, update_table_structure, show_frame
-import time
+from utils import connect_database, update_table_structure, show_frame,get_db_path
+import time,shutil,sqlite3
 import customtkinter as ctk
 
 # Créer la fenêtre principale
@@ -105,7 +105,11 @@ def show_loading_screen():
 
         try:
             # Initialiser la connexion à la base de données
-            conn = connect_database()
+            db_path = get_db_path()
+            if not os.path.exists(db_path):
+               original_db_path = os.path.join(os.path.dirname(__file__), "DataBase", "GESTOCK.db")
+               shutil.copy2(original_db_path, db_path)
+            conn = sqlite3.connect(db_path)
             update_table_structure(conn)
 
             # Dictionnaire pour gérer les différentes frames

@@ -3,7 +3,7 @@ from tkinter import ttk
 import sqlite3
 from datetime import datetime
 import os
-import utils
+import utils,shutil
 
 def create_sales_history_frame(main_frame,dashboard_treeview,sales_report_frame):
     # Créer un cadre pour l'historique des ventes dans le frame principal
@@ -40,7 +40,10 @@ def create_sales_history_frame(main_frame,dashboard_treeview,sales_report_frame)
     sales_history_treeview.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     # Connexion à la base de données et récupération des données de l'historique des ventes
-    db_path = os.path.join(os.path.dirname(__file__),'DataBase','GESTOCK.db')
+    db_path = utils.get_db_path()
+    if not os.path.exists(db_path):
+      original_db_path = os.path.join(os.path.dirname(__file__), "DataBase", "GESTOCK.db")
+      shutil.copy2(original_db_path, db_path)
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute("SELECT date, product_name, quantity, unit_price, total_price, id FROM sales_history")  # Ajout de l'ID pour la suppression
