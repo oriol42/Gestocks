@@ -78,19 +78,6 @@ def create_reports_frame(main_frame):
     if ligne_actuelle.strip():
      tk.Label(stock_report_frame, text=ligne_actuelle.rstrip(','), font=("Helvetica", 12), bg="#ffffff", fg="#333").pack(anchor="w", pady=4) 
     
-    # Récupérer les produits nécessitant un réapprovisionnement
-    reapprovisionnement_requis = utils.get_reapprovisionnement_requis()
-    
-    # Formatage du texte pour réapprovisionnement
-    texte_reapprovisionnement = "Réapprovisionnement requis : "
-    for produit, quantite_requise in reapprovisionnement_requis.items():
-        texte_reapprovisionnement += f"{produit} ({quantite_requise} unités), "
-
-    # Retirer la dernière virgule et l'espace
-    texte_reapprovisionnement = texte_reapprovisionnement.rstrip(", ")
-
-    # Affichage du texte dans le label
-    tk.Label(stock_report_frame, text=texte_reapprovisionnement, font=("Helvetica", 12), bg="#ffffff", fg="#D32F2F").pack(anchor="w",pady=4)
 
     # Cadre pour les dépenses liées au stock
     expense_frame = tk.Frame(reports_frame, bg="#ffffff", bd=3, relief="solid", padx=10, pady=10)

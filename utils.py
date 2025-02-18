@@ -1357,33 +1357,6 @@ def get_rentabilite_par_produit():
     
     return rentabilite_par_produit
 
-def get_reapprovisionnement_requis():
-    # Connexion à la base de données
-    db_path = get_db_path()
-    if not os.path.exists(db_path):
-     original_db_path = os.path.join(os.path.dirname(__file__), "DataBase", "GESTOCK.db")
-     shutil.copy2(original_db_path, db_path)
-    conn = sqlite3.connect(db_path)  # Remplace par ton chemin de base de données
-    cursor = conn.cursor()
-
-    # Sélectionner les produits avec leurs quantités
-    cursor.execute("SELECT nom, quantite FROM stocks")
-    stocks = cursor.fetchall()
-
-    # Sélectionner le seuil de réapprovisionnement
-    cursor.execute("SELECT reorder_point FROM reorder_threshold")
-    reorder_point = cursor.fetchone()[0]  # Il n'y a qu'une seule valeur dans reorder_threshold
-
-    # Trouver les produits nécessitant un réapprovisionnement
-    reapprovisionnement = {}
-    for produit, quantite in stocks:
-        if quantite <= reorder_point:
-            reapprovisionnement[produit] = reorder_point - quantite
-
-    # Fermer la connexion
-    conn.close()
-
-    return reapprovisionnement
 
 def update_stocks_report_frame(stock_report_frame):
     
@@ -1405,20 +1378,6 @@ def update_stocks_report_frame(stock_report_frame):
     if ligne_actuelle.strip():
      tk.Label(stock_report_frame, text=ligne_actuelle.rstrip(','), font=("Helvetica", 12), bg="#ffffff", fg="#333").pack(anchor="w", pady=4) 
     
-    # Récupérer les produits nécessitant un réapprovisionnement
-    reapprovisionnement_requis = get_reapprovisionnement_requis()
-    
-    # Formatage du texte pour réapprovisionnement
-    texte_reapprovisionnement = "Réapprovisionnement requis : "
-    for produit, quantite_requise in reapprovisionnement_requis.items():
-        texte_reapprovisionnement += f"{produit} ({quantite_requise} unités), "
-
-    # Retirer la dernière virgule et l'espace
-    texte_reapprovisionnement = texte_reapprovisionnement.rstrip(", ")
-
-    # Affichage du texte dans le label
-    tk.Label(stock_report_frame, text=texte_reapprovisionnement, font=("Helvetica", 12), bg="#ffffff", fg="#D32F2F").pack(anchor="w",pady=4)
-
 
 def create_account_form(content_frame):
     """
