@@ -2,7 +2,7 @@ import customtkinter as ctk
 from tkinter import ttk, messagebox
 import utils  # Importer les fonctions nécessaires
 
-def create_stocks_frame(main_frame, conn, sales_frame, products_treeview, dashboard_treeview, stock_alert_frame, stock_report_frame):
+def create_stocks_frame(main_frame, conn, sales_frame, products_treeview, dashboard_treeview, stock_alert_frame, stock_report_frame,expense_frame):
     stocks_frame = ctk.CTkFrame(main_frame, fg_color="#f8f9fa")  
     ctk.CTkLabel(stocks_frame, text="Gestion des Stocks", font=("Helvetica", 18, "bold"), text_color="#333").pack(pady=20)
 
@@ -77,12 +77,12 @@ def create_stocks_frame(main_frame, conn, sales_frame, products_treeview, dashbo
     button_frame.pack(pady=20)
 
     ctk.CTkButton(button_frame, text="Ajouter un Produit", font=("Helvetica", 14), fg_color="#4CAF50", height=40, width=200,
-                  command=lambda: utils.add_product(stock_treeview, conn, products_treeview, dashboard_treeview, stock_alert_frame, stock_report_frame, category_filter)).pack(side="left", padx=10)
+                  command=lambda: utils.add_product(stock_treeview, conn, products_treeview, dashboard_treeview, stock_alert_frame, stock_report_frame, category_filter,expense_frame)).pack(side="left", padx=10)
 
     ctk.CTkButton(button_frame, text="Supprimer un Produit", font=("Helvetica", 14), fg_color="#FF5722", height=40, width=200,
-                  command=lambda: utils.delete_product(stock_treeview, conn, products_treeview, dashboard_treeview, stock_alert_frame, stock_report_frame, category_filter)).pack(side="left", padx=10)
+                  command=lambda: utils.delete_product(stock_treeview, conn, products_treeview, dashboard_treeview, stock_alert_frame, stock_report_frame, category_filter,expense_frame)).pack(side="left", padx=10)
 
     ctk.CTkButton(button_frame, text="Modifier un Produit", font=("Helvetica", 14), fg_color="#FF9800", height=40, width=200,
-                  command=lambda: utils.modify_product(stock_treeview, conn, products_treeview, dashboard_treeview, stock_alert_frame, stock_report_frame, category_filter)).pack(side="left", padx=10)
+                  command=lambda: utils.modify_product(stock_treeview, conn, products_treeview, dashboard_treeview, stock_alert_frame, stock_report_frame, category_filter,expense_frame)).pack(side="left", padx=10)
 
     return stocks_frame

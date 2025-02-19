@@ -79,7 +79,7 @@ def load_products(stock_treeview, conn):
 
 
 # Fonction pour ajouter un produit
-def add_product(stock_treeview, conn,products_treeview,dashboard_treeview,stock_alert_frame,stock_report_frame,category_filter):
+def add_product(stock_treeview, conn,products_treeview,dashboard_treeview,stock_alert_frame,stock_report_frame,category_filter,expense_frame):
     def submit_product():
         nom = entry_nom.get()
         quantite = entry_quantite.get()
@@ -123,6 +123,7 @@ def add_product(stock_treeview, conn,products_treeview,dashboard_treeview,stock_
         update_dashboard_treeview(dashboard_treeview)
         update_stocks_report_frame(stock_report_frame)
         update_categories(conn,category_filter)
+        show_stock_cost(expense_frame)
         add_window.destroy()
 
     # Fenêtre pour ajouter un produit
@@ -165,7 +166,7 @@ def add_product(stock_treeview, conn,products_treeview,dashboard_treeview,stock_
 
     tk.Button(add_window, text="Ajouter", font=("arial", 9), bg="#4CAF50", fg="white", command=submit_product).grid(row=6, column=1, sticky="w", padx=12, pady=12)
     
-def delete_product(stock_treeview, conn,products_treeview,dashboard_treeview,stock_alert_frame,stock_report_frame,category_filter):
+def delete_product(stock_treeview, conn,products_treeview,dashboard_treeview,stock_alert_frame,stock_report_frame,category_filter,expense_frame):
     # Récupérer l'élément sélectionné dans le Treeview
     selected_item = stock_treeview.selection()
     if not selected_item:
@@ -194,12 +195,13 @@ def delete_product(stock_treeview, conn,products_treeview,dashboard_treeview,sto
         update_dashboard_treeview(dashboard_treeview)
         update_stocks_report_frame(stock_report_frame)
         update_categories(conn,category_filter)
+        show_stock_cost(expense_frame)
     else:
         messagebox.showinfo("Annulé", "Suppression annulée.")
       
            
 # Fonction pour modifier un produit
-def modify_product(stock_treeview, conn,products_treeview,dashboard_treeview,stock_alert_frame,stock_report_frame,category_filter):
+def modify_product(stock_treeview, conn,products_treeview,dashboard_treeview,stock_alert_frame,stock_report_frame,category_filter,expense_frame):
     selected_item = stock_treeview.selection()
     if not selected_item:
         messagebox.showwarning("Sélection requise", "Veuillez sélectionner un produit à modifier.")
@@ -296,6 +298,7 @@ def modify_product(stock_treeview, conn,products_treeview,dashboard_treeview,sto
         load_low_stock_alerts(stock_alert_frame)
         update_stocks_report_frame(stock_report_frame)
         update_categories(conn,category_filter)
+        show_stock_cost(expense_frame)
         
         modify_window.destroy()
 
@@ -486,7 +489,7 @@ def cancel_the_sales(cart_treeview, products_treeview, conn,total_label):
         # Effacer les éléments existants dans le Treeview du panier
         for item in cart_treeview.get_children():
             cart_treeview.delete(item)
-        total_label.config(text="0 FCFA")
+        total_label.configure(text="0 FCFA")
 
         # Recharger tous les produits depuis la base de données
         load_products_sales(products_treeview, conn)
@@ -689,7 +692,7 @@ def cancel_the_cart(cart_treeview, products_treeview, conn,total_label):
         # Effacer les éléments existants dans le Treeview du panier
         for item in cart_treeview.get_children():
             cart_treeview.delete(item)
-        total_label.config(text="0 FCFA")
+        total_label.configure(text="0 FCFA")
 
         # Recharger tous les produits depuis la base de données
         load_products_sales(products_treeview, conn)
@@ -819,7 +822,11 @@ def get_low_stock_items():
 
     try:
         # Chemin vers la base de données
-        db_path = os.path.join(os.path.dirname(__file__), 'DataBase', 'GESTOCK.db')
+        
+        db_path = get_db_path()
+        if not os.path.exists(db_path):
+          original_db_path = os.path.join(os.path.dirname(__file__), "DataBase", "GESTOCK.db")
+          shutil.copy2(original_db_path, db_path)
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
@@ -1718,3 +1725,29 @@ def update_categories(conn, category_filter):
     """
     categories = get_categories(conn)  # Récupérer les catégories distinctes
     category_filter['values'] = categories  # Mettre à jour les valeurs de la combobox
+    
+def calculate_stock_cost():
+    db_path = get_db_path()
+    if not os.path.exists(db_path):
+     original_db_path = os.path.join(os.path.dirname(__file__), "DataBase", "GESTOCK.db")
+     shutil.copy2(original_db_path, db_path)
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("SELECT SUM(PrixAchatUnite) FROM stocks")
+    stock_cost = cursor.fetchone()[0]
+    conn.close()
+    return stock_cost if stock_cost is not None else 0
+
+def show_stock_cost(expense_frame):
+    stock_cost = calculate_stock_cost()
+    stock_cost_label = tk.Label(
+        expense_frame, 
+        text=f"Dépenses liées au Stock : {stock_cost} FCFA", 
+        font=("Helvetica", 12), 
+        bg="#ffffff", 
+        fg="#333"
+    )
+    stock_cost_label.grid(row=0, column=0, sticky="w", pady=4)
+    
+
+    

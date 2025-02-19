@@ -84,7 +84,7 @@ def create_reports_frame(main_frame):
     expense_frame.pack(pady=10, fill="x")
     
     # Calcul dynamique des dépenses liées au stock
-    tk.Label(expense_frame, text=f"Dépenses liées au Stock : ", font=("Helvetica", 12), bg="#ffffff", fg="#333").grid(row=0, column=0, sticky="w", pady=4)
+    utils.show_stock_cost(expense_frame)
     
     # Bouton pour exporter le rapport avec CustomTkinter
     export_button = ctk.CTkButton(reports_frame, 
@@ -96,7 +96,7 @@ def create_reports_frame(main_frame):
                                   command=lambda: export_report(reports_frame))
     export_button.pack(pady=15, ipadx=10, ipady=5)
 
-    return reports_frame, sales_report_frame, stock_report_frame
+    return reports_frame, sales_report_frame, stock_report_frame,expense_frame
 
 
 # Fonction pour créer un dossier 'rapports' dans 'Documents'

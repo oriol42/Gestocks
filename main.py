@@ -117,7 +117,7 @@ def show_loading_screen():
 
             # Création des frames
             dashboard_frame, dashboard_treeview, stock_alert_frame = create_dashboard_frame(root)
-            report_frame, sales_report_frame, stock_report_frame = create_reports_frame(root)
+            report_frame, sales_report_frame, stock_report_frame,expense_frame = create_reports_frame(root)
             sales_history_frame, sale_history_treeview, totals_frame, totals_treeview = create_sales_history_frame(root, dashboard_treeview, sales_report_frame)
             sales_frame, sales_treeview = create_sales_frame(
                 root, conn, sale_history_treeview, totals_treeview,
@@ -159,7 +159,7 @@ def show_loading_screen():
             frames["dashboard"] = dashboard_frame
             frames["sales"] = sales_frame
             frames["sales_history"] = sales_history_frame
-            frames["stocks"] = create_stocks_frame(root, conn, sales_treeview, products_treeview, dashboard_treeview, stock_alert_frame, stock_report_frame)
+            frames["stocks"] = create_stocks_frame(root, conn, sales_treeview, products_treeview, dashboard_treeview, stock_alert_frame, stock_report_frame,expense_frame)
             frames["suppliers"] = create_suppliers_frame(root, conn)
             frames["reports"] = report_frame
             frames["settings"] = create_settings_frame(root, stock_alert_frame, stock_report_frame)
