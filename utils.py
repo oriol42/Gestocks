@@ -1,15 +1,17 @@
 import tkinter as tk
-from tkinter import ttk, messagebox,simpledialog
+from tkinter import ttk, messagebox
 import os
 import sqlite3
 from datetime import datetime,timedelta
-from reportlab.lib.pagesizes import letter
+import textwrap
 from reportlab.pdfgen import canvas
 import webbrowser
 from dotenv import load_dotenv
 from tkinter.simpledialog import askstring
 import bcrypt
 import shutil 
+from num2words import num2words
+
 
 def get_db_path():
     # Récupère le dossier %AppData%/Gestocks
@@ -84,8 +86,8 @@ def add_product(stock_treeview, conn,products_treeview,dashboard_treeview,stock_
         nom = entry_nom.get()
         quantite = entry_quantite.get()
         prix = entry_prix.get()
-        fournisseur = entry_fournisseur.get() or "Non spécifié"  # Fournisseur par défaut
-        categorie = category_combobox.get()
+        fournisseur = fournisseurs_combobox.get() or "Non spécifié"  # Fournisseur par défaut
+        categorie = category_combobox.get() or "Non spéficié"
         date_ajout = datetime.now().strftime("%d/%m/%Y")
         PrixAchatUnite = entry_PrixAchatUnite.get()
 
@@ -144,11 +146,18 @@ def add_product(stock_treeview, conn,products_treeview,dashboard_treeview,stock_
     entry_prix.grid(row=2, column=1, padx=12, pady=12)
 
     tk.Label(add_window, text="Fournisseur :", font=("arial", 9)).grid(row=3, column=0, sticky="w", padx=12, pady=12)
-    entry_fournisseur = tk.Entry(add_window, font=("arial", 9))
-    entry_fournisseur.grid(row=3, column=1, padx=12, pady=12)
+    db_path = get_db_path()
+    if not os.path.exists(db_path):
+     original_db_path = os.path.join(os.path.dirname(__file__), "DataBase", "GESTOCK.db")
+     shutil.copy2(original_db_path, db_path)
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("SELECT DISTINCT nom FROM fournisseurs")
+    fournisseurs = [row[0] for row in cursor.fetchall()]
+    fournisseurs_combobox = ttk.Combobox(add_window, values=fournisseurs, font=("arial", 9))
+    fournisseurs_combobox.grid(row=3, column=1, padx=12, pady=12)
 
     tk.Label(add_window, text="Catégorie :", font=("arial", 9)).grid(row=4, column=0, sticky="w", padx=12, pady=12)
-    
     db_path = get_db_path()
     if not os.path.exists(db_path):
      original_db_path = os.path.join(os.path.dirname(__file__), "DataBase", "GESTOCK.db")
@@ -234,9 +243,16 @@ def modify_product(stock_treeview, conn,products_treeview,dashboard_treeview,sto
     entry_prix.grid(row=2, column=1, padx=12, pady=12)
 
     tk.Label(modify_window, text="Fournisseur :", font=("arial", 9)).grid(row=3, column=0, sticky="w", padx=12, pady=12)
-    entry_fournisseur = tk.Entry(modify_window, font=("arial", 9))
-    entry_fournisseur.insert(0, fournisseur)
-    entry_fournisseur.grid(row=3, column=1, padx=12, pady=12)
+    db_path = get_db_path()
+    if not os.path.exists(db_path):
+      original_db_path = os.path.join(os.path.dirname(__file__), "DataBase", "GESTOCK.db")
+      shutil.copy2(original_db_path, db_path)
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("SELECT DISTINCT nom FROM fournisseurs")
+    fournisseurs = [row[0] for row in cursor.fetchall()]
+    fournisseur_combobox = ttk.Combobox(modify_window, values=fournisseurs,font=("arial", 9))
+    fournisseur_combobox.grid(row=3, column=1, padx=12, pady=12)
 
     tk.Label(modify_window, text="Catégorie :", font=("arial", 9)).grid(row=4, column=0, sticky="w", padx=12, pady=12)
     db_path = get_db_path()
@@ -264,7 +280,7 @@ def modify_product(stock_treeview, conn,products_treeview,dashboard_treeview,sto
         new_nom = entry_nom.get()
         new_quantite = entry_quantite.get()
         new_prix = entry_prix.get()
-        new_fournisseur = entry_fournisseur.get() or "Non spécifié"  # Fournisseur par défaut si vide
+        new_fournisseur = fournisseur_combobox.get() or "Non spécifié"  # Fournisseur par défaut si vide
         new_categorie = category_combobox.get()
         new_PrixAchatUnite = entry_PrixAchatUnite.get()
 
@@ -426,9 +442,9 @@ def search_sales(sales_treeview, conn, search_entry):
     # Préparer la requête pour rechercher par nom, quantité ou prix
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT nom, quantite, prix FROM stocks
-        WHERE nom LIKE ? OR quantite LIKE ? OR prix LIKE ?
-    """, ('%' + search_text + '%', '%' + search_text + '%', '%' + search_text + '%'))
+        SELECT nom, quantite, prix, PrixAchatUnite FROM stocks
+        WHERE nom LIKE ? OR quantite LIKE ? OR prix LIKE ? OR PrixAchatUnite LIKE ?
+    """, ('%' + search_text + '%', '%' + search_text + '%', '%' + search_text + '%', '%' + search_text + '%'))
 
     # Effacer les anciennes données dans le Treeview
     for row in sales_treeview.get_children():
@@ -541,13 +557,15 @@ def create_facture_folder():
 
     return facture_folder
 
-def generate_simple_invoice(cart_treeview, conn, sales_history_treeview, dashboard_treeview, stock_alert_frame, sales_report_frame, stock_report_frame):
+def generate_simple_invoice(cart_treeview, conn, sales_history_treeview, dashboard_treeview, stock_alert_frame, sales_report_frame, stock_report_frame,customer_name_entry):
     if not cart_treeview.get_children():
         messagebox.showwarning("Panier vide", "Aucun produit dans le panier. Veuillez ajouter des produits avant de générer la facture.")
         return
 
     # Créer le dossier 'factures' dans 'GESTOCK' si nécessaire
     facture_folder = create_facture_folder()
+    #recuperer le nom du client
+    
 
     # Générer un nom unique pour la facture
     invoice_name = f"Facture_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
@@ -555,54 +573,48 @@ def generate_simple_invoice(cart_treeview, conn, sales_history_treeview, dashboa
 
     # Récupérer les informations de l'entreprise depuis la table account
     cursor = conn.cursor()
-    cursor.execute("SELECT company_name, company_address, company_phone_numbers FROM account")
+    cursor.execute("SELECT company_name, company_address, company_phone_numbers, description FROM account")
     company_info = cursor.fetchone()
     if company_info:
-        company_name, company_address, company_phone_numbers = company_info
+        company_name, company_address, company_phone_numbers, description = company_info
+        customer_name = get_customer_name(customer_name_entry)
     else:
         messagebox.showerror("Erreur", "Les informations de l'entreprise ne sont pas disponibles.")
         return
 
     # Créer un canevas pour la facture
-    c = canvas.Canvas(invoice_path, pagesize=letter)
+    c = canvas.Canvas(invoice_path, pagesize=(200,600))
+    # Nom de l'entreprise
     c.setFont("Helvetica-Bold", 16)
-    c.drawString(200, 750, "FACTURE")
-
-    # Informations de l'entreprise
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(50, 720, f"Nom de l'entreprise :")
-    c.setFont("Helvetica", 12)
-    c.drawString(200, 720, company_name)
-
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(50, 700, f"Adresse de l'entreprise :")
-    c.setFont("Helvetica", 12)
-    c.drawString(200, 700, company_address)
-
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(50, 680, f"Numéro de téléphone :")
-    c.setFont("Helvetica", 12)
-    c.drawString(200, 680, str(company_phone_numbers))
-
-    # Ajouter un espacement avant la section des produits
-    y_position = 640
-    c.drawString(50, y_position, "-------------------------------------------")
-    y_position -= 20
-
-    c.setFont("Helvetica", 12)
-    c.drawString(50, y_position, f"Date : {datetime.now().strftime('%d/%m/%Y')}")
-    c.drawString(50, y_position - 20, f"Heure : {datetime.now().strftime('%H:%M:%S')}")
+    c.drawString(50, 570, company_name.upper())
+    
+    c.setFont("Helvetica-Bold", 8)
+    c.drawString(10,550,f"Téléphone : {company_phone_numbers}")
+    c.drawString(10,540,f"Localisation : {company_address}")
+     
+    # Date et numero de la facture
+    c.setFont("Helvetica-Bold", 8)
+    c.drawString(10,530,f"Facture N° : {datetime.now().strftime('%Y%m%d_%H%M%S')}")
+    c.drawString(10, 520, f"Date : {datetime.now().strftime('%d/%m/%Y')}  Heure : {datetime.now().strftime('%H:%M:%S')}")
+    
+    c.setFont("Helvetica-Bold",10)
+    c.drawString(10, 510, "-" * 30)
+    
+    c.setFont("Helvetica", 8)
+    c.drawString(10,500,f"Client : Mme/Mlle/M {customer_name}")
 
     # Entêtes des colonnes
-    c.drawString(50, y_position - 60, "Nom du produit")
-    c.drawString(200, y_position - 60, "Quantité")
-    c.drawString(300, y_position - 60, "Prix unitaire")
-    c.drawString(400, y_position - 60, "Prix total")
-    c.line(50, y_position - 65, 500, y_position - 65)
+    y_position = 475
+    c.setFont("Helvetica-Bold", 8)
+    c.drawString(10, y_position, "Désignation")
+    c.drawString(110, y_position, "Qte")
+    c.drawString(140, y_position, "P.U")
+    c.drawString(170, y_position, "Total")
+    c.line(10, y_position - 5, 190, y_position - 5)
 
     # Variables pour le total général
+    y_position -= 15
     total_general = 0
-    y_position -= 80
 
     # Mettre à jour les stocks et écrire les produits dans la facture
     for item in cart_treeview.get_children():
@@ -613,56 +625,81 @@ def generate_simple_invoice(cart_treeview, conn, sales_history_treeview, dashboa
         total_price = float(values[3])
 
         # Ajouter les données dans le PDF
-        c.drawString(50, y_position, product_name)
-        c.drawString(200, y_position, str(quantity_sold))
-        c.drawString(300, y_position, f"{unit_price:.2f}")
-        c.drawString(400, y_position, f"{total_price:.2f}")
-        y_position -= 20
+        c.setFont("Helvetica", 8)
+        c.drawString(10, y_position, product_name[:10])  # Limiter à 10 caractères pour éviter le débordement
+        c.drawString(110, y_position, str(quantity_sold))
+        c.drawString(140, y_position, f"{unit_price:.2f}")
+        c.drawString(170, y_position, f"{total_price:.2f}")
         total_general += total_price
+        y_position -= 12
+        if y_position < 50 :
+            c.showPage()
+            y_position = 570
+    
+    # Total général
+    c.setFont("Helvetica-Bold", 8)
+    c.drawString(10, y_position - 10, "-" * 30)
+    c.drawString(10, y_position - 25, f"Total à payer : {total_general:.2f} FCFA")
 
-        # Mettre à jour la quantité dans la base de données
-        cursor = conn.cursor()
-        cursor.execute("SELECT quantite, PrixAchatUnite FROM stocks WHERE nom = ?", (product_name,))
-        result = cursor.fetchone()
-        if result:
-            current_stock, unit_purchase_price = result
-            if current_stock >= quantity_sold:
-                new_stock = current_stock - quantity_sold
-                cursor.execute("UPDATE stocks SET quantite = ? WHERE nom = ?", (new_stock, product_name))
+    # Montant en toutes lettres
+    montant_en_lettres = num2words(total_general, lang='fr').capitalize()
+    c.setFont("Helvetica", 7)
+    c.drawString(10, y_position - 40, f"{montant_en_lettres} FCFA")
+    
+    max_line_length = 50
+    description_lines = textwrap.wrap(description,width=max_line_length)
+    y_position -= 60
+    c.setFont("Helvetica",7)
+    for line in description_lines:
+        c.drawString(10,y_position,line)
+        y_position -= 10
+        if y_position < 50:
+            c.showPage()
+            y_position = 570
+    # Remerciement
+    c.setFont("Helvetica", 8)
+    c.drawCentredString(100, y_position - 70, "Merci de votre visite !")
+    
+    # Mettre à jour la quantité dans la base de données
+    cursor = conn.cursor()
+    cursor.execute("SELECT quantite, PrixAchatUnite FROM stocks WHERE nom = ?", (product_name,))
+    result = cursor.fetchone()
+    if result:
+        current_stock, unit_purchase_price = result
+        if current_stock >= quantity_sold:
+            new_stock = current_stock - quantity_sold
+            cursor.execute("UPDATE stocks SET quantite = ? WHERE nom = ?", (new_stock, product_name))
                 
-                # Vérifier si une vente existe déjà pour ce produit et cette date
-                cursor.execute("SELECT id, quantity FROM sales_history WHERE product_name = ? AND date = ?", 
-                               (product_name, datetime.now().strftime('%Y-%m-%d')))
-                existing_sale = cursor.fetchone()
+            # Vérifier si une vente existe déjà pour ce produit et cette date
+            cursor.execute("SELECT id, quantity FROM sales_history WHERE product_name = ? AND date = ?", 
+                (product_name, datetime.now().strftime('%Y-%m-%d')))
+            existing_sale = cursor.fetchone()
 
-                if existing_sale:
-                    # Si une vente existe, mettre à jour la quantité, le total, et le prix d'achat unitaire
-                    new_quantity = existing_sale[1] + quantity_sold
-                    new_total = new_quantity * unit_price
-                    cursor.execute(
-                        "UPDATE sales_history SET quantity = ?, total_price = ?, unit_purchase_price = ? WHERE id = ?",
-                        (new_quantity, new_total, unit_purchase_price, existing_sale[0])
-                    )
-                else:
-                    # Sinon, insérer une nouvelle vente
-                    cursor.execute(
-                        "INSERT INTO sales_history (date, product_name, quantity, unit_price, total_price, unit_purchase_price) "
-                        "VALUES (?, ?, ?, ?, ?, ?)",
-                        (datetime.now().strftime('%Y-%m-%d'), product_name, quantity_sold, unit_price, total_price, unit_purchase_price)
+            if existing_sale:
+                # Si une vente existe, mettre à jour la quantité, le total, et le prix d'achat unitaire
+                new_quantity = existing_sale[1] + quantity_sold
+                new_total = new_quantity * unit_price
+                cursor.execute(
+                    "UPDATE sales_history SET quantity = ?, total_price = ?, unit_purchase_price = ? WHERE id = ?",
+                    (new_quantity, new_total, unit_purchase_price, existing_sale[0])
                     )
             else:
-                messagebox.showerror("Erreur de stock", f"Stock insuffisant pour le produit : {product_name}")
-                conn.rollback()
-                return
+                # Sinon, insérer une nouvelle vente
+                cursor.execute(
+                    "INSERT INTO sales_history (date, product_name, quantity, unit_price, total_price, unit_purchase_price) "
+                    "VALUES (?, ?, ?, ?, ?, ?)",
+                    (datetime.now().strftime('%Y-%m-%d'), product_name, quantity_sold, unit_price, total_price, unit_purchase_price)
+                    )
         else:
-            messagebox.showerror("Erreur de produit", f"Produit introuvable dans la base de données : {product_name}")
-            conn.rollback()
-            return
+             messagebox.showerror("Erreur de stock", f"Stock insuffisant pour le produit : {product_name}")
+             conn.rollback()
+             return
+    else:
+        messagebox.showerror("Erreur de produit", f"Produit introuvable dans la base de données : {product_name}")
+        conn.rollback()
+        return
 
     conn.commit()  # Enregistrer les modifications dans la base de données
-
-    # Ajouter le total général
-    c.drawString(50, y_position - 20, f"Total général : {total_general:.2f} FCFA")
 
     # Sauvegarder et fermer le PDF
     c.save()
@@ -940,8 +977,8 @@ def add_supplier(suppliers_treeview, conn):
     def save_supplier():
         nom = nom_entry.get().strip()
         contact = contact_entry.get().strip()
-        adresse = adresse_entry.get().strip()
-        email = email_entry.get().strip()
+        adresse = adresse_entry.get().strip() or "Non spécifié"
+        email = email_entry.get().strip() or "Non spécifiée"
         produit_livre = produit_livre_entry.get().strip()
 
 
@@ -1400,7 +1437,7 @@ def create_account_form(content_frame):
 
     # Cadre pour les labels et les champs
     form_frame = tk.Frame(content_frame, bg="#f7f7f7")
-    form_frame.pack(pady=10)
+    form_frame.pack(pady=5)
 
     # Champ Nom administrateur
     tk.Label(form_frame, text="Nom administrateur", font=("Helvetica", 12), bg="#f7f7f7", fg="#444").grid(row=0, column=0, padx=10, pady=5, sticky="e")
@@ -1426,6 +1463,11 @@ def create_account_form(content_frame):
     tk.Label(form_frame, text="Numéro(s) de téléphone", font=("Helvetica", 12), bg="#f7f7f7", fg="#444").grid(row=4, column=0, padx=10, pady=5, sticky="e")
     company_phone_numbers_entry = tk.Entry(form_frame, font=("Helvetica", 12), width=30)
     company_phone_numbers_entry.grid(row=4, column=1, pady=5)
+    
+    #Champ text pour recuperer les infos sur les services de la structure  
+    tk.Label(form_frame, text="Description des services", font=("Helvetica", 12), bg="#f7f7f7", fg="#444").grid(row=5, column=0, padx=10, pady=5, sticky="e")
+    text_area = tk.Text(form_frame, height=10, width=40)  # Hauteur de 10 lignes, largeur de 40 caractères
+    text_area.grid(row=5, column=1,pady=5)
 
     # Fonction pour vérifier si un compte existe déjà dans la table
     def account_exists():
@@ -1452,9 +1494,10 @@ def create_account_form(content_frame):
       company_name = company_name_entry.get()
       company_address = company_address_entry.get()
       company_phone_numbers = company_phone_numbers_entry.get()
+      description = text_area.get("1.0", tk.END)  # Récupérer tout le texte du champ Text
 
       # Vérification des champs vides
-      if not administrator_name or not password or not company_name or not company_address or not company_phone_numbers:
+      if not administrator_name or not password or not company_name or not company_address or not company_phone_numbers or not text_area:
           messagebox.showwarning("Entrée invalide", "Tous les champs doivent être remplis.")
           return
 
@@ -1477,9 +1520,9 @@ def create_account_form(content_frame):
       try:
           # Insérer les données dans la table account
           cursor.execute("""
-              INSERT INTO account (administrator_name, password, company_name, company_address, company_phone_numbers)
-              VALUES (?, ?, ?, ?, ?)
-          """, (administrator_name, hashed_password, company_name, company_address, company_phone_numbers))
+              INSERT INTO account (administrator_name, password, company_name, company_address, company_phone_numbers, description)
+              VALUES (?, ?, ?, ?, ?, ?)
+          """, (administrator_name, hashed_password, company_name, company_address, company_phone_numbers,description))
         
           conn.commit()
           messagebox.showinfo("Succès", "Compte créé avec succès.")
@@ -1490,7 +1533,7 @@ def create_account_form(content_frame):
 
 
     # Bouton pour soumettre le formulaire
-    tk.Button(content_frame, text="Créer le compte", font=("Helvetica", 12), bg="#4CAF50", fg="white", command=save_account).pack(pady=10)
+    tk.Button(form_frame, text="Créer le compte", font=("Helvetica", 12), bg="#4CAF50", fg="white", command=save_account).grid(row=6, column=1,pady=5)
 
 # Charger les variables d'environnement depuis le fichier .env
 load_dotenv()
@@ -1539,11 +1582,16 @@ def modify_account_form(content_frame):
     tk.Label(input_frame, text="Numéro de téléphone", font=("Helvetica", 12), bg="#f7f7f7", fg="#444").grid(row=4, column=0, padx=10, pady=5, sticky="e")
     company_phone_numbers_entry = tk.Entry(input_frame, font=("Helvetica", 12), width=30)
     company_phone_numbers_entry.grid(row=4, column=1, padx=10, pady=5)
+    
+    #Champ text pour recuperer les infos sur les services de la structure  
+    tk.Label(input_frame, text="Description des services", font=("Helvetica", 12), bg="#f7f7f7", fg="#444").grid(row=5, column=0, padx=10, pady=5, sticky="e")
+    text_area = tk.Text(input_frame, height=6, width=40)  # Hauteur de 10 lignes, largeur de 40 caractères
+    text_area.grid(row=5, column=1,pady=5)
 
     # Champ Mot de passe actuel
-    tk.Label(input_frame, text="Mot de passe actuel", font=("Helvetica", 12), bg="#f7f7f7", fg="#444").grid(row=5, column=0, padx=10, pady=5, sticky="e")
+    tk.Label(input_frame, text="Mot de passe actuel", font=("Helvetica", 12), bg="#f7f7f7", fg="#444").grid(row=6, column=0, padx=10, pady=5, sticky="e")
     current_password_entry = tk.Entry(input_frame, font=("Helvetica", 12), show="*", width=30)
-    current_password_entry.grid(row=5, column=1, padx=10, pady=5)
+    current_password_entry.grid(row=6, column=1, padx=10, pady=5)
 
     # Fonction pour vérifier les mots de passe et enregistrer les modifications
     def save_account_changes():
@@ -1554,6 +1602,7 @@ def modify_account_form(content_frame):
       new_company_name = company_name_entry.get()
       new_company_address = company_address_entry.get()
       new_company_phone_numbers = company_phone_numbers_entry.get()
+      new_description = text_area.get("1.0", tk.END)  # Récupérer tout le texte du champ Text
 
       # Connexion à la base de données pour récupérer les informations actuelles
       db_path = get_db_path()
@@ -1594,9 +1643,9 @@ def modify_account_form(content_frame):
 
       cursor.execute("""
           UPDATE account
-          SET administrator_name = ?, password = ?, company_name = ?, company_address = ?, company_phone_numbers = ?
+          SET administrator_name = ?, password = ?, company_name = ?, company_address = ?, company_phone_numbers = ?, description = ?
           WHERE rowid = 1
-      """, (new_administrator_name, hashed_new_password, new_company_name, new_company_address, new_company_phone_numbers))
+      """, (new_administrator_name, hashed_new_password, new_company_name, new_company_address, new_company_phone_numbers, new_description))
 
       conn.commit()
       conn.close()
@@ -1748,6 +1797,22 @@ def show_stock_cost(expense_frame):
         fg="#333"
     )
     stock_cost_label.grid(row=0, column=0, sticky="w", pady=4)
-    
+
+def get_customer_name(customer_name_entry):
+    customer_name = customer_name_entry.get()
+    if not customer_name:
+        text = "Non spécifié"
+        return text
+    else:
+        return customer_name
+
+def get_company_description(text_area) :
+    company_description = text_area.get("1.0", tk.END)
+    if not company_description:
+        text = "Commerce général"
+        return text
+    else:
+        return company_description
+        
 
     

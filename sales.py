@@ -49,6 +49,10 @@ def create_sales_frame(main_frame, conn, sales_history_treeview, totals_treeview
     ctk.CTkLabel(quantity_frame, text="Quantité :", font=("Helvetica", 14), text_color="#333").pack(side=ctk.LEFT, padx=5)
     quantity_entry = ctk.CTkEntry(quantity_frame, font=("Helvetica", 14), width=40)
     quantity_entry.pack(side=ctk.LEFT, padx=5)
+    
+    ctk.CTkLabel(quantity_frame, text="Nom du client :", font=("Helvetica", 14), text_color="#333").pack(side=ctk.LEFT, padx=5)
+    customer_name_entry = ctk.CTkEntry(quantity_frame, font=("Helvetica", 14), width=200)
+    customer_name_entry.pack(side=ctk.LEFT, padx=5)
 
     # **Boutons d'action : Ajouter et annuler**
     action_buttons_frame = ctk.CTkFrame(sales_frame, corner_radius=10, fg_color="#f0f0f0")
@@ -85,7 +89,7 @@ def create_sales_frame(main_frame, conn, sales_history_treeview, totals_treeview
     cart_actions_frame = ctk.CTkFrame(sales_frame, corner_radius=10, fg_color="#f0f0f0")
     cart_actions_frame.pack(pady=10)
 
-    generate_invoice_button = ctk.CTkButton(cart_actions_frame, text="GÉNÉRER LA FACTURE", font=("Helvetica", 14), fg_color="#2196F3", text_color="white", command=lambda: [utils.generate_simple_invoice(cart_treeview, conn, sales_history_treeview, dashboard_treeview, stock_alert_frame, sales_report_frame, stock_report_frame), utils.update_totals_treeview(totals_treeview), utils.update_dashboard_treeview(dashboard_treeview)])
+    generate_invoice_button = ctk.CTkButton(cart_actions_frame, text="GÉNÉRER LA FACTURE", font=("Helvetica", 14), fg_color="#2196F3", text_color="white", command=lambda: [utils.generate_simple_invoice(cart_treeview, conn, sales_history_treeview, dashboard_treeview, stock_alert_frame, sales_report_frame, stock_report_frame,customer_name_entry), utils.update_totals_treeview(totals_treeview), utils.update_dashboard_treeview(dashboard_treeview)])
     generate_invoice_button.pack(side=ctk.LEFT, padx=10)
 
     empty_button = ctk.CTkButton(cart_actions_frame, text="VIDER LE PANIER", font=("Helvetica", 14), fg_color="#FF5722", text_color="white", command=lambda: utils.cancel_the_cart(cart_treeview, products_treeview, conn, total_label))
